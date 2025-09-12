@@ -2,10 +2,10 @@ body {
     background-color: black;
 }
 
-#cube {
+#info {
     background-color: white;
     width: 200px;
-    height: 200px;
     margin: auto;
-    border-radius: 20px;
+    padding: 3px;
+    border-radius: 5px;
 }
