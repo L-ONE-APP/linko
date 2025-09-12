@@ -2,7 +2,7 @@ body {
     background-color: black;
 }
 
-#info {
+#username {
     background-color: white;
     width: 200px;
     margin: auto;
@@ -10,10 +10,14 @@ body {
     border-radius: 5px;
 }
 
-.ff {
-    background-color: white;
-    width: 200px;
+.cls {
     margin: auto;
-    padding: 3px;
+    width: 100px;
+    background-color: green;
+    padding: 20px;
     border-radius: 5px;
+}
+
+.txt {
+    color: rgb(177, 116, 247);
 }
