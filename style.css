@@ -1,0 +1,43 @@
+/* Общие стили для всего документа */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a2e;
+    color: #e4e4e7;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    overflow: hidden; /* Скрываем прокрутку, так как 3D-эффект может ее вызывать */
+}
+/* Стиль для контейнера контента */
+.content-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+/* Стиль для заголовка */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #ffc94b;
+}
+/* Стиль для подзаголовка */
+p {
+    font-size: 1.25rem;
+    color: #a4a4b8;
+}
+/* Стиль для 3D-сцены */
+canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
