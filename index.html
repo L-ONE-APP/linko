@@ -14,11 +14,13 @@
         :root {
             --bg-primary: #000000;
             --bg-secondary: #1a1a1a;
-            --bg-header: rgba(0, 0, 0, 0.75);
+            --bg-tertiary: #2a2a2a;
+            --bg-header: rgba(0, 0, 0, 0.7);
             --text-primary: #ffffff;
             --text-secondary: #a0a0a0;
             --accent: #8B5CF6;
             --accent-light: #A78BFA;
+            --border-color: #333333;
             --shadow: 0 0 20px rgba(139, 92, 246, 0.3);
             --safe-area-top: env(safe-area-inset-top);
             --safe-area-bottom: env(safe-area-inset-bottom);
@@ -27,11 +29,13 @@
         html[data-theme='light'] {
             --bg-primary: #f9fafb;
             --bg-secondary: #ffffff;
-            --bg-header: rgba(249, 250, 251, 0.75);
+            --bg-tertiary: #f3f4f6;
+            --bg-header: rgba(249, 250, 251, 0.7);
             --text-primary: #000000;
             --text-secondary: #505050;
             --accent: #7C3AED;
             --accent-light: #8B5CF6;
+            --border-color: #e5e7eb;
             --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
         }
         
@@ -47,28 +51,29 @@
             position: sticky; top: 0; z-index: 10;
             background-color: var(--bg-header);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            padding-top: calc(var(--safe-area-top) + 1rem); /* 1rem default padding */
+            padding-top: calc(var(--safe-area-top) + 1rem);
+            border-bottom: 1px solid var(--border-color);
         }
         .glass-nav {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
             background-color: var(--bg-header);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             padding-bottom: var(--safe-area-bottom);
+            border-top: 1px solid var(--border-color);
         }
         main {
-             /* Padding to avoid content going under header and nav */
-            padding-top: 1px; /* To prevent margin collapse */
-            padding-bottom: calc(var(--safe-area-bottom) + 80px); /* Space for nav */
+            padding-bottom: calc(var(--safe-area-bottom) + 70px);
         }
 
         .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
-        .accent-button:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
+        .accent-button:disabled { background-color: var(--text-secondary); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
         .no-outline:focus { outline: none; box-shadow: none; }
         .horizontal-scroll::-webkit-scrollbar { display: none; }
         .horizontal-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .modal { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(100%); pointer-events: none; }
+        .modal { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(100%); opacity: 0; pointer-events: none; }
         .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
         .modal.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
@@ -76,32 +81,54 @@
         .fade-in { animation: fadeIn 0.5s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: var(--bg-primary); width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
+        .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: transparent; width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
         .checkbox-custom:checked { background-color: var(--accent); border-color: var(--accent); }
         .checkbox-custom:checked::after { content: ''; position: absolute; left: 0.45rem; top: 0.15rem; width: 0.4rem; height: 0.8rem; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
     
         .date-scroller-btn { position: relative; }
-        .date-scroller-btn.active::after { content: ''; position: absolute; bottom: 0; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; }
+        .date-scroller-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; }
 
-        /* Screen Transitions */
         .screen { position: absolute; top: 0; left: 0; right: 0; height: 100%; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .screen.left { transform: translateX(-100%); }
         .screen.right { transform: translateX(100%); }
         .screen.center { transform: translateX(0); }
-
+        
+        .admin-input, .admin-textarea {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .admin-input:focus, .admin-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .file-input-label {
+            display: block;
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-tertiary);
+            border-radius: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input-label:hover {
+             background-color: var(--border-color);
+        }
     </style>
 </head>
 <body class="overflow-hidden">
 
     <div id="app-container" class="relative h-screen w-screen overflow-hidden">
-        <!-- Onboarding Screen -->
+        <!-- Onboarding Screen (No changes) -->
         <div id="screen-onboarding" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500" style="background-color: var(--bg-primary);">
             <div id="onboarding-step-1" class="w-full max-w-sm">
                 <h1 class="text-6xl font-extrabold tracking-tighter">KUZBOOK</h1>
                 <p class="mt-2 text-lg" style="color: var(--text-secondary);">Твой удобный дневник</p>
                 <button id="btn-welcome-continue" class="accent-button w-full mt-20 py-4 text-lg font-semibold rounded-xl no-outline">Продолжить</button>
             </div>
-            <!-- Other onboarding steps... -->
             <div id="onboarding-step-2" class="w-full max-w-sm hidden">
                  <h2 class="text-3xl font-bold">Как тебя зовут?</h2>
                 <p class="mt-2" style="color: var(--text-secondary);">Используй свои настоящие имя и фамилию.</p>
@@ -133,7 +160,7 @@
             <div id="screen-main" class="screen center flex-col overflow-y-auto">
                 <header class="glass-header p-4 flex-shrink-0">
                     <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
-                    <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-2"></div>
+                    <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
                 </header>
                 <main id="homework-list" class="flex-grow p-4"></main>
             </div>
@@ -165,13 +192,42 @@
                     <h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1>
                 </header>
                 <main class="flex-grow p-4 space-y-8">
-                    <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);"><h2 class="text-2xl font-bold mb-4">Управление расписанием</h2><form id="schedule-form" class="space-y-4"> <!-- Form content... --> </form></div>
-                    <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);"><h2 class="text-2xl font-bold mb-4">Управление оценками</h2><form id="grades-form" class="space-y-4"> <!-- Form content... --> </form></div>
+                    <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
+                        <h2 class="text-2xl font-bold mb-4">Управление расписанием</h2>
+                        <form id="schedule-form" class="space-y-4">
+                            <div><label class="font-medium mb-1 block">Дата</label><input type="date" name="admin-date" required class="admin-input"></div>
+                            <div><label class="font-medium mb-1 block">Предмет</label><input type="text" name="admin-subject" placeholder="Например, Математика" required class="admin-input"></div>
+                            <div><label class="font-medium mb-1 block">Время</label><input type="text" name="admin-time" placeholder="Например, 08:30-09:15" required class="admin-input"></div>
+                            <div><label class="font-medium mb-1 block">Текст ДЗ</label><textarea name="admin-homework" rows="4" placeholder="Опишите домашнее задание..." class="admin-textarea"></textarea></div>
+                            <div>
+                                <label for="admin-hw-files" class="file-input-label">Прикрепить файлы к ДЗ</label>
+                                <input type="file" name="admin-hw-files" id="admin-hw-files" multiple class="hidden">
+                                <div id="hw-files-list" class="text-sm mt-2 text-gray-400"></div>
+                            </div>
+                            <div><label class="font-medium mb-1 block">Текст ответа</label><textarea name="admin-answers" rows="4" placeholder="Напишите решение или ответ..." class="admin-textarea"></textarea></div>
+                             <div>
+                                <label for="admin-answer-files" class="file-input-label">Прикрепить фото к ответу</label>
+                                <input type="file" name="admin-answer-files" id="admin-answer-files" multiple accept="image/*" class="hidden">
+                                <div id="answer-files-list" class="text-sm mt-2 text-gray-400"></div>
+                            </div>
+                            <button type="submit" id="admin-submit-btn" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline mt-4">Сохранить урок</button>
+                        </form>
+                    </div>
+                    <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
+                        <h2 class="text-2xl font-bold mb-4">Управление оценками (JSON)</h2>
+                        <form id="grades-form" class="space-y-4">
+                            <!-- Grades form remains the same as it's for advanced use -->
+                             <p class="text-sm" style="color: var(--text-secondary);">Вставьте JSON для массового обновления оценок.</p>
+                             <div><label class="font-medium mb-1 block">Четверть</label><input type="number" name="admin-grades-quarter" min="1" max="4" required class="admin-input" placeholder="1"></div>
+                             <div><label class="font-medium mb-1 block">JSON с оценками</label><textarea name="admin-grades-json" rows="6" class="admin-textarea" placeholder='[{"full_name": "Иванов Иван", "subject": "Математика", "all": ["5","4","Н"], "avg": "4.5"}]'></textarea></div>
+                             <button type="submit" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline mt-4">Обновить оценки</button>
+                        </form>
+                    </div>
                     <div id="admin-status" class="text-center p-4 rounded-lg opacity-0 transition-opacity duration-300"></div>
                 </main>
             </div>
             
-            <nav id="app-nav" class="glass-nav flex justify-around p-2 border-t" style="border-color: var(--bg-secondary);"></nav>
+            <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px]"></nav>
         </div>
 
         <!-- Modals -->
@@ -190,7 +246,6 @@
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const TG = window.Telegram.WebApp;
 
-        // --- DOM ELEMENTS & STATE ---
         const mainScreen = document.getElementById('screen-main'), profileScreen = document.getElementById('screen-profile'), adminScreen = document.getElementById('screen-admin'), onboardingScreen = document.getElementById('screen-onboarding'), appNav = document.getElementById('app-nav');
         const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), confirm: document.getElementById('modal-confirm-answers'), answers: document.getElementById('modal-answers'), grades: document.getElementById('modal-grades'), };
         
@@ -198,7 +253,6 @@
         let currentOpenModal = null; let currentLessonCache = null;
 
         // --- ONBOARDING LOGIC ---
-        /* ... same as before, no changes needed ... */
         const onboardingSteps = { '1': document.getElementById('onboarding-step-1'),'2': document.getElementById('onboarding-step-2'),'3': document.getElementById('onboarding-step-3'),'4': document.getElementById('onboarding-step-4') };
         function switchOnboardingStep(from, to) { onboardingSteps[from].classList.add('hidden'); onboardingSteps[to].classList.remove('hidden'); }
         document.getElementById('btn-welcome-continue').addEventListener('click', () => switchOnboardingStep('1', '2'));
@@ -206,166 +260,163 @@
         document.getElementById('btn-name-back').addEventListener('click', () => switchOnboardingStep('3', '2'));
         document.getElementById('btn-name-confirm').addEventListener('click', () => switchOnboardingStep('3', '4'));
         document.querySelectorAll('.theme-btn').forEach(btn => btn.addEventListener('click', async (e) => finishOnboarding(e.currentTarget.dataset.theme)));
-        async function finishOnboarding(theme) { /* ... same as before, no changes needed ... */ }
+        async function finishOnboarding(theme) {
+            let firstname = document.getElementById('input-firstname').value.trim(); let lastname = document.getElementById('input-lastname').value.trim(); let fullName = `${lastname} ${firstname}`, shortName = `${lastname} ${firstname.charAt(0)}.`, isAdmin = false; if (firstname.toUpperCase() === 'KUZBOOK' && lastname.toUpperCase() === 'ADMIN') { fullName = 'Бутенко Всеволод'; shortName = 'Бутенко В.'; isAdmin = true; }
+            let { data: existingUser } = await db.from('users').select('*').eq('full_name', fullName).single();
+            if (existingUser) { state.user = existingUser; if (existingUser.theme !== theme) { await db.from('users').update({ theme: theme }).eq('id', existingUser.id); state.user.theme = theme; } } else { const { data: newUser, error } = await db.from('users').insert({ full_name: fullName, short_name: shortName, is_admin: isAdmin, theme: theme }).select().single(); if (error) { console.error("Profile creation error:", error); return; } state.user = newUser; }
+            localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
+            setTheme(state.user.theme || 'dark');
+            onboardingScreen.classList.add('opacity-0');
+            setTimeout(() => { onboardingScreen.style.display = 'none'; startApp(); }, 500);
+        }
 
         // --- APP INITIALIZATION & CORE ---
         function init() {
-            TG.ready();
-            TG.expand();
-            setTheme(TG.colorScheme || 'dark');
-            TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
-
+            TG.ready(); TG.expand();
             const savedUser = localStorage.getItem('kuzbook_user');
-            if (savedUser) {
-                state.user = JSON.parse(savedUser);
-                onboardingScreen.style.display = 'none';
-                startApp();
-            } else {
-                onboardingScreen.style.display = 'flex';
-            }
+            if (savedUser) { state.user = JSON.parse(savedUser); onboardingScreen.style.display = 'none'; setTheme(state.user.theme || 'dark'); startApp(); } else { onboardingScreen.style.display = 'flex'; setTheme(TG.colorScheme || 'dark'); }
+            TG.onEvent('themeChanged', () => { if(!state.user?.theme) setTheme(TG.colorScheme); });
         }
         
-        function startApp() {
-            if (state.user.is_admin) state.screens.push('admin');
-            document.getElementById('content-wrapper').classList.add('opacity-100');
-            renderNav();
-            setupDateScroller();
-            renderHomeworkForDate(new Date());
-            renderProfile();
-            if(state.user.is_admin) setupAdminPanel();
-        }
-
+        function startApp() { if (state.user.is_admin) state.screens.push('admin'); document.getElementById('content-wrapper').classList.add('opacity-100'); renderNav(); setupDateScroller(); renderHomeworkForDate(new Date()); renderProfile(); if(state.user.is_admin) setupAdminPanel(); }
         function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
         document.getElementById('btn-logout').addEventListener('click', () => { localStorage.removeItem('kuzbook_user'); window.location.reload(); });
 
         // --- NAVIGATION & UI ---
         function renderNav() {
-            let navHTML = `<button data-screen="main" class="nav-btn p-3 rounded-lg w-24 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="profile" class="nav-btn p-3 rounded-lg w-24 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
-            if (state.user?.is_admin) {
-                navHTML += `<button data-screen="admin" class="nav-btn p-3 rounded-lg w-24 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`;
-            }
+            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
+            if (state.user?.is_admin) { navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; }
             appNav.innerHTML = navHTML;
             document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
             updateNavButtons();
         }
 
-        function navigate() {
-            const newScreen = this.dataset.screen;
-            if (newScreen === state.currentScreen) return;
-            
-            const oldScreenEl = document.getElementById(`screen-${state.currentScreen}`);
-            const newScreenEl = document.getElementById(`screen-${newScreen}`);
-            
-            const oldIndex = state.screens.indexOf(state.currentScreen);
-            const newIndex = state.screens.indexOf(newScreen);
-
-            if (newIndex > oldIndex) { // Moving right
-                oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('left');
-                newScreenEl.classList.remove('right'); newScreenEl.classList.add('center');
-            } else { // Moving left
-                oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('right');
-                newScreenEl.classList.remove('left'); newScreenEl.classList.add('center');
-            }
-
-            state.currentScreen = newScreen;
-            updateNavButtons();
-        }
-
+        function navigate() { /* No changes */ const newScreen = this.dataset.screen; if (newScreen === state.currentScreen) return; const oldScreenEl = document.getElementById(`screen-${state.currentScreen}`); const newScreenEl = document.getElementById(`screen-${newScreen}`); const oldIndex = state.screens.indexOf(state.currentScreen); const newIndex = state.screens.indexOf(newScreen); if (newIndex > oldIndex) { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('left'); newScreenEl.classList.remove('right'); newScreenEl.classList.add('center'); } else { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('right'); newScreenEl.classList.remove('left'); newScreenEl.classList.add('center'); } state.currentScreen = newScreen; updateNavButtons(); }
         function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK SCREEN ---
-        function setupDateScroller() {
-            const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
-            scroller.innerHTML = '';
-            for (let i = -10; i <= 10; i++) {
-                const date = new Date(); date.setDate(today.getDate() + i);
-                const isToday = i === 0;
-                const dateEl = document.createElement('button');
-                dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 transition-colors duration-300 no-outline ${isToday ? 'active' : ''}`;
-                dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)';
-                dateEl.dataset.date = date.toISOString().split('T')[0];
-                dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`;
-                dateEl.addEventListener('click', (e) => {
-                    const currentActive = scroller.querySelector('.active');
-                    if (currentActive) {
-                        currentActive.classList.remove('active');
-                        currentActive.style.color = 'var(--text-secondary)';
-                    }
-                    e.currentTarget.classList.add('active'); e.currentTarget.style.color = 'var(--accent)';
-                    renderHomeworkForDate(date);
-                });
-                scroller.appendChild(dateEl);
-                if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100);
+        function setupDateScroller() { /* No changes */ const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 transition-colors duration-300 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { const currentActive = scroller.querySelector('.active'); if (currentActive) { currentActive.classList.remove('active'); currentActive.style.color = 'var(--text-secondary)'; } e.currentTarget.classList.add('active'); e.currentTarget.style.color = 'var(--accent)'; renderHomeworkForDate(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
+        
+        async function renderHomeworkForDate(date) {
+            const list = document.getElementById('homework-list');
+            list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Загрузка...</p>`;
+            const dateString = date.toISOString().split('T')[0];
+
+            const { data: schedule, error } = await db.from('schedule').select(`*, attachments(*)`).eq('lesson_date', dateString);
+            if (error || !schedule || schedule.length === 0) { list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">На этот день ничего нет.</p>`; return; }
+
+            const scheduleIds = schedule.map(s => s.id);
+            const { data: statuses } = await db.from('homework_status').select('schedule_id').eq('user_id', state.user.id).in('schedule_id', scheduleIds);
+            const completedIds = new Set(statuses.map(s => s.schedule_id));
+
+            list.innerHTML = '';
+            schedule.forEach(hw => {
+                const hasHw = hw.homework_text && hw.homework_text.trim() !== '';
+                const isCompleted = completedIds.has(hw.id);
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 fade-in';
+                item.style.backgroundColor = 'var(--bg-secondary)';
+                item.innerHTML = `
+                    <div class="flex-grow">
+                        <p class="font-bold text-lg">${hw.subject}</p>
+                        <p class="text-sm" style="color: var(--text-secondary);">${hw.time}</p>
+                    </div>
+                    ${hasHw ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : '<div class="w-6"></div>'}
+                    <input type="checkbox" data-schedule-id="${hw.id}" class="checkbox-custom flex-shrink-0" ${isCompleted ? 'checked' : ''}>
+                `;
+                if (hasHw) { item.addEventListener('click', (e) => { if (e.target.type !== 'checkbox') openModal(modals.lesson, hw); }); }
+                item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
+                list.appendChild(item);
+            });
+        }
+        
+        async function handleCheckboxChange(e) {
+            const scheduleId = e.target.dataset.scheduleId;
+            const isChecked = e.target.checked;
+            if (isChecked) {
+                await db.from('homework_status').upsert({ user_id: state.user.id, schedule_id: scheduleId });
+            } else {
+                await db.from('homework_status').delete().match({ user_id: state.user.id, schedule_id: scheduleId });
             }
         }
-        async function renderHomeworkForDate(date) { /* ... same as before, no changes needed ... */ }
         
-        // --- PROFILE SCREEN ---
-        function renderProfile() { /* ... same as before, no changes needed ... */ }
-        function handleQuarterClick(e) { /* ... same as before, no changes needed ... */ }
-        async function renderGradesForQuarter(quarter) { /* ... same as before, no changes needed ... */ }
+        // --- PROFILE SCREEN (No changes) ---
+        function renderProfile() { if (!state.user) return; document.getElementById('profile-name').textContent = state.user.short_name; const quarterButtons = document.querySelectorAll('.quarter-btn'); quarterButtons.forEach(btn => btn.addEventListener('click', handleQuarterClick)); handleQuarterClick({ target: quarterButtons[0] }); }
+        function handleQuarterClick(e) { document.querySelector('.quarter-btn[style*="var(--accent)"]')?.setAttribute('style', 'color: var(--text-secondary); border-color: transparent;'); e.target.setAttribute('style', 'color: var(--accent); border-color: var(--accent);'); renderGradesForQuarter(parseInt(e.target.dataset.quarter)); }
+        async function renderGradesForQuarter(quarter) { const list = document.getElementById('grades-list'); list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Загрузка оценок...</p>`; const { data: grades } = await db.from('grades').select('*').eq('user_id', state.user.id).eq('quarter', quarter); if (!grades || grades.length === 0) { list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Оценок за эту четверть пока нет.</p>`; return; } list.innerHTML = ''; grades.forEach(grade => { const item = document.createElement('div'); item.className = 'flex items-center justify-between p-4 rounded-2xl fade-in'; item.style.backgroundColor = 'var(--bg-secondary)'; item.innerHTML = `<span class="font-bold text-lg">${grade.subject}</span><div class="flex items-center gap-3"><span class="font-bold text-lg" style="color: var(--accent);">${parseFloat(grade.avg_grade).toFixed(1)}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></div>`; item.addEventListener('click', () => openModal(modals.grades, grade)); list.appendChild(item); }); }
 
         // --- ADMIN PANEL LOGIC ---
         function setupAdminPanel() {
             document.getElementById('schedule-form').addEventListener('submit', handleScheduleSubmit);
             document.getElementById('grades-form').addEventListener('submit', handleGradesSubmit);
+            
+            const hwFileInput = document.getElementById('admin-hw-files');
+            const answerFileInput = document.getElementById('admin-answer-files');
+            
+            hwFileInput.addEventListener('change', () => updateFileList('hw-files-list', hwFileInput.files));
+            answerFileInput.addEventListener('change', () => updateFileList('answer-files-list', answerFileInput.files));
+        }
+        function updateFileList(listId, files) {
+            const listEl = document.getElementById(listId);
+            listEl.innerHTML = files.length > 0 ? `${files.length} файл(ов) выбрано` : '';
         }
 
-        function showAdminStatus(message, isError) {
-            const statusEl = document.getElementById('admin-status');
-            statusEl.textContent = message;
-            statusEl.className = `text-center p-4 rounded-lg opacity-100 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white`;
-            setTimeout(() => { statusEl.classList.remove('opacity-100'); }, 3000);
+        function showAdminStatus(message, isError) { /* No changes */ const statusEl = document.getElementById('admin-status'); statusEl.textContent = message; statusEl.className = `text-center p-4 rounded-lg opacity-100 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white`; setTimeout(() => { statusEl.classList.remove('opacity-100'); }, 3000); }
+
+        async function handleScheduleSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const submitBtn = document.getElementById('admin-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Сохранение...';
+
+            const scheduleData = { lesson_date: form['admin-date'].value, subject: form['admin-subject'].value, time: form['admin-time'].value, homework_text: form['admin-homework'].value, answer_text: form['admin-answers'].value };
+            const { data: savedLesson, error } = await db.from('schedule').upsert(scheduleData, { onConflict: 'lesson_date, subject' }).select().single();
+            if (error) { showAdminStatus(`Ошибка: ${error.message}`, true); submitBtn.disabled = false; submitBtn.textContent = 'Сохранить урок'; return; }
+
+            const hwFiles = form['admin-hw-files'].files;
+            const answerFiles = form['admin-answer-files'].files;
+            const hwUploadError = await uploadFiles(hwFiles, savedLesson.id, 'homework');
+            const answerUploadError = await uploadFiles(answerFiles, savedLesson.id, 'answer');
+
+            if (hwUploadError || answerUploadError) { showAdminStatus(`Урок сохранен, но ошибка загрузки файлов.`, true); } else { showAdminStatus('Урок успешно сохранен!', false); form.reset(); updateFileList('hw-files-list', []); updateFileList('answer-files-list', []); }
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Сохранить урок';
         }
 
-        async function handleScheduleSubmit(e) { /* ... Re-implementing with better status ... */ }
-        async function uploadFiles(files, lessonId, type) { /* ... Re-implementing with better error handling ... */ }
-        async function handleGradesSubmit(e) { /* ... Re-implementing with better status ... */ }
+        async function uploadFiles(files, lessonId, type) { /* No changes */ for (const file of files) { const filePath = `${type}/${lessonId}/${Date.now()}-${file.name}`; const { error } = await db.storage.from('kuzbook_files').upload(filePath, file); if (error) { console.error(error); return error; } await db.from('attachments').insert({ schedule_id: lessonId, file_path: filePath, file_name: file.name, attachment_type: type }); } return null; }
+        async function handleGradesSubmit(e) { /* No changes */ e.preventDefault(); const form = e.target; showAdminStatus('Обработка оценок...', false); try { const gradesData = JSON.parse(form['admin-grades-json'].value); const quarter = form['admin-grades-quarter'].value; const { data: users } = await db.from('users').select('id, full_name'); const userMap = new Map(users.map(u => [u.full_name, u.id])); let processedCount = 0; for (const gradeEntry of gradesData) { const userId = userMap.get(gradeEntry.full_name); if (userId) { await db.from('grades').delete().match({ user_id: userId, quarter: quarter, subject: gradeEntry.subject }); await db.from('grades').insert({ user_id: userId, quarter: quarter, subject: gradeEntry.subject, grades_data: gradeEntry.all, avg_grade: gradeEntry.avg }); processedCount++; } } showAdminStatus(`Успешно обработано ${processedCount} записей!`, false); form.reset(); } catch (err) { showAdminStatus(`Ошибка! Проверьте JSON. ${err.message}`, true); } }
 
         // --- MODAL LOGIC ---
-        function openModal(modal, data) {
-            modals.overlay.classList.add('active');
-            currentOpenModal = modal;
-            populateModal(modal, data);
-            modal.classList.add('active');
-            TG.BackButton.show();
-        }
-        function closeModal() {
-            if (currentOpenModal) {
-                modals.overlay.classList.remove('active');
-                currentOpenModal.classList.remove('active');
-                currentOpenModal = null;
+        function openModal(modal, data) { modals.overlay.classList.add('active'); currentOpenModal = modal; populateModal(modal, data); modal.classList.add('active'); TG.BackButton.show(); }
+        function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
+        
+        function populateModal(modal, data) {
+            modal.innerHTML = '';
+            switch(modal) {
+                case modals.lesson:
+                    currentLessonCache = data;
+                    const hwFiles = data.attachments.filter(a => a.attachment_type === 'homework').map(file => `<a href="${db.storage.from('kuzbook_files').getPublicUrl(file.file_path).data.publicUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline" style="background-color: var(--bg-primary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg><span class="truncate">${file.file_name}</span></a>`).join('');
+                    modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto"><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${hwFiles}</div></main><footer class="flex-shrink-0 pt-4"><button id="btn-show-answers" class="accent-button w-full py-4 text-lg font-semibold rounded-xl no-outline">Посмотреть ответы</button></footer>`;
+                    modal.querySelector('#btn-show-answers').addEventListener('click', () => { closeModal(); openModal(modals.confirm); });
+                    break;
+                case modals.confirm:
+                    modal.innerHTML = `<div class="p-6 rounded-2xl w-full max-w-sm" style="background-color: var(--bg-secondary);"><h2 class="text-xl font-bold">Ты уверен?</h2><p class="mt-2" style="color: var(--text-secondary);">Лучше сначала попробовать сделать самому!</p><div class="flex gap-4 mt-8"><button class="modal-close-btn w-full py-3 text-lg font-semibold rounded-xl no-outline" style="background-color: var(--bg-primary);">Отмена</button><button id="btn-confirm-answers" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline">Показать</button></div></div>`;
+                    modal.querySelector('#btn-confirm-answers').addEventListener('click', () => { closeModal(); openModal(modals.answers, currentLessonCache); });
+                    break;
+                case modals.answers:
+                    const answerFiles = data.attachments.filter(a => a.attachment_type === 'answer').map(file => `<img src="${db.storage.from('kuzbook_files').getPublicUrl(file.file_path).data.publicUrl}" class="w-full rounded-lg mb-2">`).join('');
+                    let answerContent = data.answer_text ? `<p class="whitespace-pre-wrap mb-4">${data.answer_text}</p>` : '';
+                    answerContent += answerFiles;
+                    modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-3xl font-bold">Ответы</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto">${answerContent || 'Ответов нет.'}</main>`;
+                    break;
+                case modals.grades: /* No changes */ const gradeColors = { '5': 'bg-green-500', '4': 'bg-yellow-500', '3': 'bg-orange-500', '2': 'bg-red-500', 'Б': 'bg-blue-500', 'Н': 'bg-gray-500', 'ОП': 'bg-purple-500', 'ТЧК': 'bg-pink-500' }; const gradesHTML = data.grades_data.map(g => `<div class="w-12 h-12 flex items-center justify-center rounded-lg font-bold text-xl text-white ${gradeColors[g] || 'bg-gray-700'}">${g}</div>`).join(''); modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-3xl font-bold">${data.subject}</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto"><div class="p-4 rounded-xl text-center" style="background-color: var(--bg-secondary);"><p style="color: var(--text-secondary);">Средний балл</p><p class="text-5xl font-bold" style="color: var(--accent-light);">${parseFloat(data.avg_grade).toFixed(1)}</p></div><h3 class="font-semibold text-lg mt-6 mb-2">Все оценки:</h3><div class="flex flex-wrap gap-2">${gradesHTML}</div></main>`; break;
             }
-            TG.BackButton.hide();
+            modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
         }
-        function populateModal(modal, data) { /* ... same as before, no changes needed ... */ }
 
         TG.BackButton.onClick(closeModal);
-        
-        // --- Start the app ---
         init();
-        
-        // --- RE-IMPLEMENTING FUNCTIONS FOR CONTEXT ---
-        async function finishOnboarding(theme) {
-            let firstname = document.getElementById('input-firstname').value.trim();
-            let lastname = document.getElementById('input-lastname').value.trim();
-            let fullName = `${lastname} ${firstname}`, shortName = `${lastname} ${firstname.charAt(0)}.`, isAdmin = false;
-            if (firstname.toUpperCase() === 'KUZBOOK' && lastname.toUpperCase() === 'ADMIN') { fullName = 'Бутенко Всеволод'; shortName = 'Бутенко В.'; isAdmin = true; }
-            let { data: existingUser } = await db.from('users').select('*').eq('full_name', fullName).single();
-            if (existingUser) { state.user = existingUser; if (existingUser.theme !== theme) { await db.from('users').update({ theme: theme }).eq('id', existingUser.id); state.user.theme = theme; } } else { const { data: newUser, error } = await db.from('users').insert({ full_name: fullName, short_name: shortName, is_admin: isAdmin, theme: theme }).select().single(); if (error) { console.error("Profile creation error:", error); return; } state.user = newUser; }
-            localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
-            onboardingScreen.classList.add('opacity-0');
-            setTimeout(() => { onboardingScreen.style.display = 'none'; startApp(); }, 500);
-        }
-        async function renderHomeworkForDate(date) { const list = document.getElementById('homework-list'); list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Загрузка...</p>`; const { data: homeworks, error } = await db.from('schedule').select(`*, attachments(*)`).eq('lesson_date', date.toISOString().split('T')[0]); if (error || !homeworks || homeworks.length === 0) { list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">На этот день ничего нет.</p>`; return; } list.innerHTML = ''; homeworks.forEach(hw => { const hasHw = hw.homework_text && hw.homework_text.trim() !== ''; const item = document.createElement('div'); item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 fade-in'; item.style.backgroundColor = 'var(--bg-secondary)'; item.innerHTML = `<div class="flex-grow"><p class="font-bold text-lg">${hw.subject}</p><p class="text-sm" style="color: var(--text-secondary);">${hw.time}</p></div>${hasHw ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : '<div class="w-6"></div>'}<input type="checkbox" class="checkbox-custom flex-shrink-0">`; if (hasHw) item.addEventListener('click', (e) => { if (e.target.type !== 'checkbox') openModal(modals.lesson, hw); }); list.appendChild(item); }); }
-        function renderProfile() { if (!state.user) return; document.getElementById('profile-name').textContent = state.user.short_name; const quarterButtons = document.querySelectorAll('.quarter-btn'); quarterButtons.forEach(btn => btn.addEventListener('click', handleQuarterClick)); handleQuarterClick({ target: quarterButtons[0] }); }
-        function handleQuarterClick(e) { document.querySelector('.quarter-btn[style*="var(--accent)"]')?.setAttribute('style', 'color: var(--text-secondary); border-color: transparent;'); e.target.setAttribute('style', 'color: var(--accent); border-color: var(--accent);'); renderGradesForQuarter(parseInt(e.target.dataset.quarter)); }
-        async function renderGradesForQuarter(quarter) { const list = document.getElementById('grades-list'); list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Загрузка оценок...</p>`; const { data: grades } = await db.from('grades').select('*').eq('user_id', state.user.id).eq('quarter', quarter); if (!grades || grades.length === 0) { list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">Оценок за эту четверть пока нет.</p>`; return; } list.innerHTML = ''; grades.forEach(grade => { const item = document.createElement('div'); item.className = 'flex items-center justify-between p-4 rounded-2xl fade-in'; item.style.backgroundColor = 'var(--bg-secondary)'; item.innerHTML = `<span class="font-bold text-lg">${grade.subject}</span><div class="flex items-center gap-3"><span class="font-bold text-lg" style="color: var(--accent);">${parseFloat(grade.avg_grade).toFixed(1)}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></div>`; item.addEventListener('click', () => openModal(modals.grades, grade)); list.appendChild(item); }); }
-        async function handleScheduleSubmit(e) { e.preventDefault(); const form = e.target; showAdminStatus('Сохранение...', false); const scheduleData = { lesson_date: form['admin-date'].value, subject: form['admin-subject'].value, time: form['admin-time'].value, homework_text: form['admin-homework'].value, answer_text: form['admin-answers'].value, }; const { data: savedLesson, error } = await db.from('schedule').upsert(scheduleData, { onConflict: 'lesson_date, subject' }).select().single(); if (error) { showAdminStatus(`Ошибка: ${error.message}`, true); return; } const hwFiles = form['admin-hw-files'].files; const answerFiles = form['admin-answer-files'].files; const hwUploadError = await uploadFiles(hwFiles, savedLesson.id, 'homework'); const answerUploadError = await uploadFiles(answerFiles, savedLesson.id, 'answer'); if (hwUploadError || answerUploadError) { showAdminStatus(`Урок сохранен, но ошибка загрузки файлов. Проверьте бакет.`, true); } else { showAdminStatus('Урок успешно сохранен!', false); form.reset(); } }
-        async function uploadFiles(files, lessonId, type) { for (const file of files) { const filePath = `${type}/${lessonId}/${Date.now()}-${file.name}`; const { error } = await db.storage.from('kuzbook_files').upload(filePath, file); if (error) { console.error(error); return error; } await db.from('attachments').insert({ schedule_id: lessonId, file_path: filePath, file_name: file.name, attachment_type: type }); } return null; }
-        async function handleGradesSubmit(e) { e.preventDefault(); const form = e.target; showAdminStatus('Обработка оценок...', false); try { const gradesData = JSON.parse(form['admin-grades-json'].value); const quarter = form['admin-grades-quarter'].value; const { data: users } = await db.from('users').select('id, full_name'); const userMap = new Map(users.map(u => [u.full_name, u.id])); let processedCount = 0; for (const gradeEntry of gradesData) { const userId = userMap.get(gradeEntry.full_name); if (userId) { await db.from('grades').delete().match({ user_id: userId, quarter: quarter, subject: gradeEntry.subject }); await db.from('grades').insert({ user_id: userId, quarter: quarter, subject: gradeEntry.subject, grades_data: gradeEntry.all, avg_grade: gradeEntry.avg }); processedCount++; } } showAdminStatus(`Успешно обработано ${processedCount} записей!`, false); form.reset(); } catch (err) { showAdminStatus(`Ошибка! Проверьте JSON. ${err.message}`, true); } }
-        function populateModal(modal, data) { modal.innerHTML = ''; switch(modal) { case modals.lesson: currentLessonCache = data; const hwFiles = data.attachments.filter(a => a.attachment_type === 'homework').map(file => `<a href="${db.storage.from('kuzbook_files').getPublicUrl(file.file_path).data.publicUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg" style="background-color: var(--bg-primary);">... ${file.file_name}</a>`).join(''); modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto"><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${hwFiles}</div></main><footer class="flex-shrink-0 pt-4"><button id="btn-show-answers" class="accent-button w-full py-4 text-lg font-semibold rounded-xl no-outline">Посмотреть ответы</button></footer>`; modal.querySelector('#btn-show-answers').addEventListener('click', () => { closeModal(); openModal(modals.confirm); }); break; case modals.confirm: modal.innerHTML = `<div class="p-6 rounded-2xl w-full max-w-sm" style="background-color: var(--bg-secondary);"><h2 class="text-xl font-bold">Ты уверен?</h2><p class="mt-2" style="color: var(--text-secondary);">Лучше сначала попробовать сделать самому!</p><div class="flex gap-4 mt-8"><button class="modal-close-btn w-full py-3 text-lg font-semibold rounded-xl no-outline" style="background-color: var(--bg-primary);">Отмена</button><button id="btn-confirm-answers" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline">Показать</button></div></div>`; modal.querySelector('#btn-confirm-answers').addEventListener('click', () => { closeModal(); openModal(modals.answers, currentLessonCache); }); break; case modals.answers: const answerFiles = data.attachments.filter(a => a.attachment_type === 'answer').map(file => `<img src="${db.storage.from('kuzbook_files').getPublicUrl(file.file_path).data.publicUrl}" class="w-full rounded-lg mb-2">`).join(''); let answerContent = data.answer_text ? `<p class="whitespace-pre-wrap mb-4">${data.answer_text}</p>` : ''; answerContent += answerFiles; modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-3xl font-bold">Ответы</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto">${answerContent || 'Ответов нет.'}</main>`; break; case modals.grades: const gradeColors = { '5': 'bg-green-500', '4': 'bg-yellow-500', '3': 'bg-orange-500', '2': 'bg-red-500', 'Б': 'bg-blue-500', 'Н': 'bg-gray-500', 'ОП': 'bg-purple-500', 'ТЧК': 'bg-pink-500' }; const gradesHTML = data.grades_data.map(g => `<div class="w-12 h-12 flex items-center justify-center rounded-lg font-bold text-xl text-white ${gradeColors[g] || 'bg-gray-700'}">${g}</div>`).join(''); modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-3xl font-bold">${data.subject}</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto"><div class="p-4 rounded-xl text-center" style="background-color: var(--bg-secondary);"><p style="color: var(--text-secondary);">Средний балл</p><p class="text-5xl font-bold" style="color: var(--accent-light);">${parseFloat(data.avg_grade).toFixed(1)}</p></div><h3 class="font-semibold text-lg mt-6 mb-2">Все оценки:</h3><div class="flex flex-wrap gap-2">${gradesHTML}</div></main>`; break; } modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal)); }
     </script>
 </body>
 </html>
-
