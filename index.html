@@ -306,8 +306,12 @@
             if (error || !schedule || schedule.length === 0) { list.innerHTML = `<p class="text-center mt-10" style="color: var(--text-secondary);">На этот день ничего нет.</p>`; return; }
 
             const scheduleIds = schedule.map(s => s.id);
-            const { data: statuses } = await db.from('homework_status').select('schedule_id').eq('user_id', state.user.id).in('schedule_id', scheduleIds);
-            const completedIds = new Set(statuses.map(s => s.schedule_id));
+            const { data: statuses, error: statusError } = await db.from('homework_status').select('schedule_id').eq('user_id', state.user.id).in('schedule_id', scheduleIds);
+            
+            if(statusError) {
+                console.error("Error fetching homework statuses:", statusError);
+            }
+            const completedIds = new Set(statuses ? statuses.map(s => s.schedule_id) : []);
 
             list.innerHTML = '';
             schedule.forEach(hw => {
@@ -331,7 +335,7 @@
         }
         
         async function handleCheckboxChange(e) {
-            const scheduleId = e.target.dataset.scheduleId;
+            const scheduleId = parseInt(e.target.dataset.scheduleId, 10);
             const isChecked = e.target.checked;
             if (isChecked) {
                 await db.from('homework_status').upsert({ user_id: state.user.id, schedule_id: scheduleId });
@@ -420,3 +424,4 @@
     </script>
 </body>
 </html>
+
