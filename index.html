@@ -522,7 +522,7 @@
                 const dayOfWeek = ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'][date.getDay()];
                 const currentYear = date.getFullYear();
 
-                const prompt = `Проанализируй фото с расписанием уроков. Текущий год: ${currentYear}. Мне нужно расписание ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date} (${dayOfWeek}). Извлеки из фото список уроков только для этого дня. ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи 'subject' (название предмета) и 'time' (время в формате ЧЧ:ММ-ЧЧ:ММ). НЕ ИСПОЛЬЗУЙ 'name', 'time_start' или 'time_end'. Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15'}]`;
+                const prompt = `Проанализируй фото с расписанием уроков ТОЛЬКО для 8А класса. Текущий год: ${currentYear}. Мне нужно расписание ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date} (${dayOfWeek}). Извлеки из фото список уроков только для этого дня. ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи 'subject' (название предмета) и 'time' (время в формате ЧЧ:ММ-ЧЧ:ММ). НЕ ИСПОЛЬЗУЙ 'name', 'time_start' или 'time_end'. Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15'}]`;
                 const resultText = await callGemini(prompt, [imagePart]);
                 state.adminFlowData.lessons = JSON.parse(resultText.replace(/```json/g, '').replace(/```/g, ''));
                 
@@ -540,7 +540,7 @@
                 const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
                 const currentYear = new Date(state.adminFlowData.date).getFullYear();
 
-                const prompt = `Проанализируй эти фото с домашними заданиями. Текущий год: ${currentYear}. Для каждого урока из предоставленного JSON-списка, найди соответствующее ДЗ на фото и дополни объект урока полем 'homework_text'. Ищи ДЗ для даты, близкой к ${state.adminFlowData.date}. Если для урока нет ДЗ, оставь его без изменений. НЕ ПИШИ НИЧЕГО ЛИШНЕГО! НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО ИТОГОВЫЙ JSON МАССИВ! \nСписок уроков: ${JSON.stringify(state.adminFlowData.lessons)}`;
+                const prompt = `Проанализируй эти фото с домашними заданиями. Текущий год: ${currentYear}. Для каждого урока из предоставленного JSON-списка, найди соответствующее ДЗ и время проведения на фото и дополни объект урока полем 'homework_text'. На фото есть фремя для каждого урока (со скольки до скольки). Ищи ДЗ для даты, близкой к ${state.adminFlowData.date}. Если для урока нет ДЗ, оставь его без изменений. НЕ ПИШИ НИЧЕГО ЛИШНЕГО! НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО ИТОГОВЫЙ JSON МАССИВ! \nСписок уроков: ${JSON.stringify(state.adminFlowData.lessons)}`;
                 const resultText = await callGemini(prompt, imageParts);
                 state.adminFlowData.lessons = JSON.parse(resultText.replace(/```json/g, '').replace(/```/g, ''));
                 renderAdminHwStep(4);
