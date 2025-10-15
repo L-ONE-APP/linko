@@ -10,6 +10,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+
+    <!-- AI Solution Formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhs+itH6blOKdeIFcEVR0JFeSdGZPNzDUxVRuDdiQ82A0O" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIOOTenRwDCFsanmGpp1GBL2alMplK2UrhtCubo7oTpFns7/vLS" crossorigin="anonymous"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,15 +35,15 @@
             -webkit-tap-highlight-color: transparent; 
             transition: background-color 0.4s ease, color 0.4s ease;
         }
+        .themed-transition { transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
         .glass-header, .glass-nav {
             background-color: var(--bg-header); 
             backdrop-filter: blur(24px); 
             -webkit-backdrop-filter: blur(24px);
-            transition: background-color 0.4s ease, border-color 0.4s ease;
         }
         .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
-        .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; }
-        .glass-nav { border: 1px solid var(--border-color); }
+        .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
+        .glass-nav { border: 1px solid var(--border-color); pointer-events: auto; }
         main { padding-bottom: calc(var(--safe-area-bottom) + 90px); }
         .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
         .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
@@ -52,6 +58,16 @@
         
         .scale-in-up { animation: scaleInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
         @keyframes scaleInUp { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .slide-out-left { animation: slideOutLeft 0.3s forwards ease-out; }
+        .slide-out-right { animation: slideOutRight 0.3s forwards ease-out; }
+        .slide-in-from-left { animation: slideInFromLeft 0.3s forwards ease-out; }
+        .slide-in-from-right { animation: slideInFromRight 0.3s forwards ease-out; }
+        @keyframes slideOutLeft { to { transform: translateX(-100%); opacity: 0; } }
+        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
+        @keyframes slideInFromLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInFromRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
 
         .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: transparent; width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
         .checkbox-custom:checked { background-color: var(--accent); border-color: var(--accent); }
@@ -71,17 +87,13 @@
         #loader-container { position: fixed; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
         .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
         .file-input-label:hover { background-color: var(--accent); color: white; }
-        .homework-card { touch-action: pan-y; transition: transform 0.2s ease-out; }
-        .homework-icon-container { position: relative; }
-        .fire-animation::after { content: ''; position: absolute; top: 50%; left: 50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 60%); transform: translate(-50%, -50%); border-radius: 50%; animation: firePulse 2s infinite ease-in-out; z-index: -1; }
-        @keyframes firePulse { 0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } }
     </style>
 </head>
 <body class="overflow-hidden">
 
     <div id="app-container" class="relative h-screen w-screen overflow-hidden">
         <!-- Initial Loader -->
-        <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center" style="background-color: var(--bg-primary);">
+        <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center themed-transition" style="background-color: var(--bg-primary);">
             <div class="loader"><div></div><div></div><div></div></div>
             <p class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
         </div>
@@ -89,15 +101,15 @@
         <!-- Main Content -->
         <div id="content-wrapper" class="opacity-0 transition-opacity duration-500 w-full h-full">
             <div id="loader-container" class="opacity-0 pointer-events-none"><div class="loader"><div></div><div></div><div></div></div></div>
-            <div id="screen-main" class="screen center flex-col overflow-y-auto">
-                <header class="glass-header p-4 flex-shrink-0">
+            <div id="screen-main" class="screen center flex flex-col overflow-y-auto">
+                <header class="glass-header p-4 flex-shrink-0 themed-transition">
                     <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
                     <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
                 </header>
-                <main id="homework-list" class="flex-grow p-4"></main>
+                <main id="homework-list" class="flex-grow p-4 relative overflow-hidden"></main>
             </div>
             <div id="screen-profile" class="screen right flex-col overflow-y-auto">
-                 <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between">
+                 <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
                     <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
                  </header>
                 <main id="profile-main" class="flex-grow p-4 space-y-6">
@@ -105,25 +117,26 @@
                 </main>
             </div>
             <div id="screen-admin" class="screen right flex-col overflow-y-auto">
-                <header class="glass-header p-4 flex-shrink-0"><h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1></header>
+                <header class="glass-header p-4 flex-shrink-0 themed-transition"><h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1></header>
                 <main class="flex-grow p-4 space-y-6">
-                    <button id="admin-fill-hw" class="w-full p-6 rounded-2xl text-left flex items-center justify-between" style="background-color: var(--bg-secondary);">
+                    <button id="admin-fill-hw" class="w-full p-6 rounded-2xl text-left flex items-center justify-between themed-transition" style="background-color: var(--bg-secondary);">
                         <div><h2 class="text-xl font-bold">Заполнить ДЗ</h2><p class="text-sm" style="color: var(--text-secondary);">Автоматически с помощью AI</p></div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </main>
             </div>
             <div class="nav-island-container">
-                <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px] rounded-full"></nav>
+                <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px] rounded-full themed-transition"></nav>
             </div>
         </div>
         <div id="admin-status" class="text-center p-4 rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none fixed bottom-24 left-4 right-4 z-30"></div>
         <!-- Modals -->
         <div id="modal-overlay" class="modal-overlay fixed inset-0 z-30"></div>
-        <div id="modal-lesson" class="modal fixed inset-0 z-40 flex flex-col" style="background-color: var(--bg-primary);"></div>
-        <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col" style="background-color: var(--bg-primary);"></div>
+        <div id="modal-lesson" class="modal fixed inset-0 z-40 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
+        <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
         <div id="modal-onboarding" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-settings" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
+        <div id="modal-user-profile" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
     </div>
 
     <script>
@@ -132,7 +145,7 @@
         const CLOUDINARY_API_KEY = '238868418732411';
         const CLOUDINARY_UPLOAD_PRESET = 'LonePreset';
         const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
-        const ADMIN_TELEGRAM_IDS = [1028446227]; // Replace with your actual Telegram ID
+        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
 
         // --- INIT ---
         firebase.initializeApp(firebaseConfig);
@@ -141,9 +154,10 @@
 
         // --- DOM & STATE ---
         const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), onboarding: document.getElementById('modal-onboarding'), settings: document.getElementById('modal-settings') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'profile'], adminFlowData: {} };
+        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), onboarding: document.getElementById('modal-onboarding'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile') };
+        let state = { user: null, currentScreen: 'main', screens: ['main', 'profile'], adminFlowData: {}, currentDate: new Date() };
         let currentOpenModal = null;
+        let lottieAnimation = null;
 
         // --- UTILS ---
         const vibrate = (style = 'light') => TG.HapticFeedback?.impactOccurred(style);
@@ -152,6 +166,7 @@
         const showStatus = (message, isError) => { dom.adminStatus.textContent = message; dom.adminStatus.className = `text-center p-4 rounded-lg opacity-100 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white pointer-events-none fixed bottom-24 left-4 right-4 z-30`; setTimeout(() => { dom.adminStatus.classList.remove('opacity-100'); }, 4000); };
         const fileToPart = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve({ inlineData: { mimeType: file.type, data: reader.result.split(',')[1] } }); reader.onerror = reject; reader.readAsDataURL(file); });
         function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
+        const formatDate = (timestamp) => new Date(timestamp).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
         // --- AUTH & ONBOARDING ---
         async function init() {
@@ -169,20 +184,16 @@
                 const userRef = db.ref('users_tg/' + tgUser.id);
                 const snapshot = await userRef.once('value');
                 let userData = snapshot.val();
+                
+                const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
 
                 if (!userData) {
-                    openModal(modals.onboarding, {
-                        tgUser,
-                        callback: async (fullName) => {
-                            const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: tgUser.photo_url, theme: TG.colorScheme || 'dark', isAdmin: ADMIN_TELEGRAM_IDS.includes(tgUser.id) };
-                            await userRef.set(newUser);
-                            startAppSession(newUser);
-                            closeModal();
-                        }
-                    });
+                    const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: null, theme: TG.colorScheme || 'dark', isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) };
+                    await userRef.set(newUser);
+                    startAppSession(newUser);
                 } else {
-                    const updates = { username: tgUser.username, profileIcon: tgUser.photo_url };
-                    if (ADMIN_TELEGRAM_IDS.includes(tgUser.id) && !userData.isAdmin) {
+                    const updates = { username: tgUser.username, fullName: fullName };
+                    if (ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) && !userData.isAdmin) {
                         updates.isAdmin = true;
                     }
                     await userRef.update(updates);
@@ -205,7 +216,7 @@
             }
             renderNav(); 
             setupDateScroller(); 
-            renderHomeworkForDate(new Date()); 
+            renderHomeworkForDate(state.currentDate); 
             renderProfile();
             if(state.user.isAdmin) setupAdminPanel();
         }
@@ -223,16 +234,16 @@
             const main = document.getElementById('profile-main');
             if (!state.user) { main.innerHTML = ''; return; }
             main.innerHTML = `
-                <div class="flex flex-col items-center gap-4 p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
+                <div class="flex flex-col items-center gap-4 p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
                     <div class="relative">
                         <img id="profile-icon" src="${state.user.profileIcon || `https://placehold.co/80x80/1a1a1a/FFFFFF?text=${state.user.fullName.charAt(0)}`}" class="w-20 h-20 rounded-full object-cover">
                     </div>
                     <div><h2 id="profile-name" class="text-2xl font-bold text-center">${state.user.fullName}</h2><p id="profile-login" style="color: var(--text-secondary);" class="text-center">@${state.user.username}</p></div>
                 </div>
-                <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
+                <div class="p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
                     <h3 class="text-lg font-bold mb-4">Настройки</h3>
                     <div class="space-y-4">
-                        <button id="change-name-btn" class="w-full text-left p-3 rounded-lg flex justify-between items-center" style="background-color: var(--bg-tertiary);">
+                        <button id="change-name-btn" class="w-full text-left p-3 rounded-lg flex justify-between items-center themed-transition" style="background-color: var(--bg-tertiary);">
                             <span>Сменить имя</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                         </button>
@@ -268,58 +279,76 @@
         function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { vibrate(); const currentActive = scroller.querySelector('.active'); if (currentActive) { currentActive.classList.remove('active'); currentActive.style.color = 'var(--text-secondary)'; } e.currentTarget.classList.add('active'); e.currentTarget.style.color = 'var(--accent)'; renderHomeworkForDate(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
+        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
         
-        async function renderHomeworkForDate(date) {
+        function handleDateChange(newDate) {
+            vibrate();
+            const scroller = document.getElementById('date-scroller');
+            const oldActive = scroller.querySelector('.active');
+            if (oldActive) { oldActive.classList.remove('active'); oldActive.style.color = 'var(--text-secondary)'; }
+            
+            const newActive = scroller.querySelector(`[data-date="${newDate.toISOString().split('T')[0]}"]`);
+            if (newActive) { newActive.classList.add('active'); newActive.style.color = 'var(--accent)'; }
+
             const list = document.getElementById('homework-list');
-            list.innerHTML = `<div class="flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
+            const direction = newDate > state.currentDate ? 'left' : 'right';
+            
+            list.classList.add(`slide-out-${direction}`);
+            list.addEventListener('animationend', () => {
+                renderHomeworkForDate(newDate, direction);
+            }, { once: true });
+
+            state.currentDate = newDate;
+        }
+
+        async function renderHomeworkForDate(date, direction = 'left') {
+            const list = document.getElementById('homework-list');
+            list.className = 'flex-grow p-4 relative'; // Reset classes
+            list.innerHTML = `<div class="absolute inset-0 flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
             const dateString = date.toISOString().split('T')[0];
-            const scheduleRef = db.ref('schedule/' + dateString);
             
             try {
-                const snapshot = await scheduleRef.once('value');
+                const snapshot = await db.ref('schedule/' + dateString).once('value');
                 const scheduleData = snapshot.val();
+                
+                // Clear old animation classes before adding new ones
+                list.className = 'flex-grow p-4 relative';
+                
                 if (!scheduleData) {
-                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><img src="noday.png" class="mx-auto w-40 h-40 rounded-lg opacity-70"><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
+                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
+                    if (lottieAnimation) lottieAnimation.destroy();
+                    lottieAnimation = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
                     return;
                 }
                 
                 const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
-                const statusSnapshot = await db.ref(`homework_status/${state.user.id}/${dateString}`).once('value');
-                const completedIds = new Set(Object.keys(statusSnapshot.val() || {}));
+                
+                const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
                 
                 list.innerHTML = '';
                 schedule.forEach((hw, index) => {
-                    const hasHw = hw.homework_text && hw.homework_text.trim() !== '';
-                    const isCompleted = completedIds.has(hw.id);
+                    const isCompleted = completedHomeworks[hw.id] || false;
                     const item = document.createElement('div');
-                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up homework-card'; 
+                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up'; 
                     item.style.backgroundColor = 'var(--bg-secondary)';
                     item.style.animationDelay = `${index * 70}ms`;
                     
                     item.innerHTML = `
                         <div class="flex-grow">
+                            <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
                             <p class="font-bold text-lg">${hw.subject}</p>
                             <p class="text-sm" style="color: var(--text-secondary);">${hw.teacher || ''}</p>
                         </div>
-                        <div class="text-right flex-shrink-0">
-                             <p class="font-semibold" style="color: var(--text-secondary);">${hw.time}</p>
-                             <div class="homework-icon-container h-6 w-6 ml-auto mt-1 ${hasHw ? 'fire-animation' : ''}">
-                                ${hasHw ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 relative" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : ''}
+                        <div class="text-right flex-shrink-0 flex flex-col items-center gap-2">
+                             <div class="h-6 w-6 ml-auto">
+                                ${hw.homework_text ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 relative" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : ''}
                              </div>
-                        </div>
-                        <div class="flex-shrink-0">
                            <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom" ${isCompleted ? 'checked' : ''}>
                         </div>`;
 
                     item.addEventListener('click', (e) => { if (!e.target.classList.contains('checkbox-custom')) openModal(modals.lesson, { ...hw, date: dateString }); });
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
                     
-                    let startX, currentX, isSwiping = false, threshold = -80;
-                    item.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isSwiping = true; item.style.transition = 'none'; });
-                    item.addEventListener('touchmove', (e) => { if (!isSwiping) return; currentX = e.touches[0].clientX; let diff = currentX - startX; if (diff < 0) item.style.transform = `translateX(${diff}px)`; });
-                    item.addEventListener('touchend', (e) => { if (!isSwiping) return; isSwiping = false; item.style.transition = 'transform 0.2s ease-out'; let diff = currentX - startX; if (diff < threshold) { vibrate('heavy'); const checkbox = item.querySelector('.checkbox-custom'); checkbox.checked = !checkbox.checked; handleCheckboxChange({ target: checkbox }); } item.style.transform = `translateX(0px)`; });
-
                     list.appendChild(item);
                 });
             } catch (error) {
@@ -327,63 +356,112 @@
                 list.innerHTML = `<p class="text-red-500 text-center mt-10">Не удалось загрузить расписание.</p>`;
             }
         }
-        async function handleCheckboxChange(e) { 
+        function handleCheckboxChange(e) { 
             vibrate(); 
             const scheduleId = e.target.dataset.scheduleId; 
             const date = e.target.dataset.date;
             const isChecked = e.target.checked; 
-            db.ref(`homework_status/${state.user.id}/${date}/${scheduleId}`).set(isChecked ? true : null); 
+            const key = `completed_${state.user.id}_${date}`;
+            const completed = JSON.parse(localStorage.getItem(key) || '{}');
+            if (isChecked) {
+                completed[scheduleId] = true;
+            } else {
+                delete completed[scheduleId];
+            }
+            localStorage.setItem(key, JSON.stringify(completed));
         }
         
         // --- MODALS ---
         function setupAdminPanel() { document.getElementById('admin-fill-hw').addEventListener('click', () => { vibrate(); openAdminHwFlow(); }); }
         function openModal(modal, data) { modals.overlay.classList.add('active'); currentOpenModal = modal; populateModal(modal, data); modal.classList.add('active'); TG.BackButton.show(); }
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
-        async function callGemini(prompt, imageParts = []) { /* ... unchanged ... */ }
+        async function callGemini(prompt, imageParts = []) {
+             const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error("Не удалось получить ответ от AI.");
+                return text;
+            } catch (error) { console.error("Fetch/Gemini Error:", error); throw error; }
+        }
 
         async function populateModal(modal, data) {
-            modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full" style="background-color: var(--border-color);"></div></div></div>`;
+            modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col themed-transition"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full themed-transition" style="background-color: var(--border-color);"></div></div></div>`;
             const contentWrapper = modal.firstChild;
 
             switch(modal) {
                 case modals.lesson:
-                    const commentsRef = db.ref(`comments/${data.id}`);
-                    let commentsListener;
-                    const renderComments = (commentsContainer) => {
-                        commentsContainer.innerHTML = '';
-                        commentsListener = commentsRef.on('child_added', (snapshot) => {
-                            const comment = snapshot.val();
-                            const commentEl = document.createElement('div');
-                            commentEl.className = 'p-3 rounded-lg mb-2';
-                            commentEl.style.backgroundColor = comment.authorId === state.user.id ? 'var(--accent)' : 'var(--bg-primary)';
-                            commentEl.innerHTML = `<p class="font-bold text-sm ${comment.authorId === state.user.id ? 'text-white' : ''}">${comment.authorName}</p><p class="${comment.authorId === state.user.id ? 'text-gray-200' : ''}">${comment.text}</p>`;
-                            commentsContainer.prepend(commentEl);
-                        });
-                    };
-                    const stopCommentsListener = () => { if (commentsListener) commentsRef.off('child_added', commentsListener); };
-                    
-                    const hwFiles = (data.attachments || []).map(fileUrl => `<a href="${fileUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline" style="background-color: var(--bg-primary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg><span class="truncate">Прикрепленный файл</span></a>`).join('');
-                    contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
+                    const hwFiles = (data.attachments || []).map(fileUrl => `<a href="${fileUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition" style="background-color: var(--bg-primary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg><span class="truncate">Прикрепленный файл</span></a>`).join('');
+                    contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
                         <main class="flex-grow overflow-y-auto space-y-4">
                             <div><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${hwFiles}</div></div>
-                            <div class="border-t pt-4" style="border-color: var(--border-color);"><h3 class="font-semibold text-lg mb-2">Комментарии</h3><div id="comments-container" class="space-y-2 max-h-60 overflow-y-auto"></div></div>
+                             <div class="border-t pt-4" style="border-color: var(--border-color);"><h3 class="font-semibold text-lg mb-2">Комментарии</h3><div id="comments-container" class="space-y-2"></div></div>
                         </main>
-                        <footer class="flex-shrink-0 pt-4"><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-lg no-outline" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-lg accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
+                        <footer class="flex-shrink-0 pt-4 flex flex-col gap-4"><button id="btn-ai-solve" class="accent-button w-full py-3 font-semibold rounded-xl no-outline">Решить с AI</button><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
                     
-                    renderComments(document.getElementById('comments-container'));
-                    document.getElementById('comment-form').addEventListener('submit', (e) => { e.preventDefault(); const input = document.getElementById('comment-input'); const text = input.value.trim(); if (text) { commentsRef.push({ text, authorId: state.user.id, authorName: state.user.fullName, timestamp: Date.now() }); input.value = ''; } });
-                    modal.addEventListener('transitionend', () => { if (!modal.classList.contains('active')) stopCommentsListener(); }, { once: true });
+                    document.getElementById('btn-ai-solve').addEventListener('click', () => { /* AI Logic Here */ });
+                    
+                    const commentsContainer = document.getElementById('comments-container');
+                    const commentsSnapshot = await db.ref(`comments/${data.id}`).once('value');
+                    const commentsData = commentsSnapshot.val();
+                    if(commentsData) {
+                        Object.values(commentsData).forEach((comment, index) => {
+                           const commentEl = document.createElement('div');
+                            commentEl.className = 'p-3 rounded-lg mb-2 flex gap-3 items-start opacity-0 scale-in-up';
+                            commentEl.style.backgroundColor = 'var(--bg-tertiary)';
+                            commentEl.style.animationDelay = `${index * 70}ms`;
+                            commentEl.innerHTML = `
+                                <img src="${comment.authorIcon || `https://placehold.co/40x40/1a1a1a/FFFFFF?text=${comment.authorName.charAt(0)}`}" class="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer" data-user-id="${comment.authorId}">
+                                <div>
+                                    <div class="flex items-baseline gap-2">
+                                        <p class="font-bold text-sm cursor-pointer" data-user-id="${comment.authorId}">${comment.authorName}</p>
+                                        <p class="text-xs" style="color: var(--text-secondary);">${formatDate(comment.timestamp)}</p>
+                                    </div>
+                                    <p class="text-white/90">${comment.text}</p>
+                                </div>
+                            `;
+                            commentsContainer.prepend(commentEl);
+                        });
+                    }
+
+                    document.getElementById('comment-form').addEventListener('submit', async (e) => { e.preventDefault(); const input = document.getElementById('comment-input'); const text = input.value.trim(); if (text) { const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; await db.ref(`comments/${data.id}`).push().set(newComment); input.value = ''; /* Re-render or append new comment with animation */ } });
                     break;
                 case modals.onboarding:
-                    modals.onboarding.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Добро пожаловать!</h3><p class="mb-4" style="color:var(--text-secondary);">Пожалуйста, введите ваше настоящее имя и фамилию для создания профиля.</p><input id="onboarding-name" type="text" class="w-full p-3 rounded-lg" style="background-color: var(--bg-tertiary);" placeholder="Имя Фамилия" value="${data.tgUser.first_name || ''} ${data.tgUser.last_name || ''}"><div class="flex gap-4 mt-6"><button id="onboarding-save-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
-                    document.getElementById('onboarding-save-btn').addEventListener('click', () => { const name = document.getElementById('onboarding-name').value.trim(); if(name) data.callback(name); });
+                    // This case is removed as onboarding is now seamless
                     break;
                 case modals.settings:
-                    modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
+                    modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
                     document.getElementById('settings-save-name-btn').addEventListener('click', handleNameChange);
                     break;
+                 case modals.userProfile:
+                    contentWrapper.innerHTML += `
+                        <main class="flex-grow flex flex-col items-center justify-center p-4">
+                            <div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;">
+                                <div class="flex flex-col items-center gap-4">
+                                    <img src="${data.profileIcon || `https://placehold.co/80x80/1a1a1a/FFFFFF?text=${data.fullName.charAt(0)}`}" class="w-24 h-24 rounded-full object-cover">
+                                    <h2 class="text-2xl font-bold text-center">${data.fullName}</h2>
+                                    <p style="color: var(--text-secondary);">@${data.username}</p>
+                                    <a href="https://t.me/${data.username}" target="_blank" class="accent-button w-full py-3 rounded-lg text-center font-semibold mt-4">Посмотреть в Telegram</a>
+                                    <button class="modal-close-btn w-full py-3 rounded-lg themed-transition mt-2" style="background-color: var(--bg-tertiary);">Закрыть</button>
+                                </div>
+                            </div>
+                        </main>`;
+                    break;
             }
-            modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
+            contentWrapper.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
+            contentWrapper.querySelectorAll('[data-user-id]').forEach(el => el.addEventListener('click', async (e) => {
+                const userId = e.currentTarget.dataset.userId;
+                const userSnapshot = await db.ref(`users_tg/${userId}`).once('value');
+                const userData = userSnapshot.val();
+                if(userData) {
+                    closeModal(); // Close current modal before opening new one
+                    openModal(modals.userProfile, userData);
+                }
+            }));
         }
         
         // --- ADMIN FLOW ---
@@ -391,18 +469,18 @@
 
         function renderAdminHwStep(step) {
             const modal = modals.admin;
-            let content = `<div class="p-4 pt-0 h-full flex flex-col"><div class="relative py-2"><div class="absolute top-4 left-0 h-1 rounded-full" style="background-color: var(--bg-tertiary); width: 100%;"></div><div id="admin-progress-bar" class="absolute top-4 left-0 h-1 rounded-full transition-all duration-500" style="background-color: var(--accent); width: ${step * 33.3}%;"></div></div></div>`;
+            let content = `<div class="p-4 pt-0 h-full flex flex-col"><div class="relative py-2"><div class="absolute top-4 left-0 h-1 rounded-full themed-transition" style="background-color: var(--bg-tertiary); width: 100%;"></div><div id="admin-progress-bar" class="absolute top-4 left-0 h-1 rounded-full transition-all duration-500" style="background-color: var(--accent); width: ${step * 33.3}%;"></div></div></div>`;
             const wrapper = document.createElement('div');
             wrapper.innerHTML = content;
             const contentWrapper = wrapper.firstChild;
 
-            const header = (title) => `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-2xl font-bold">${title}</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>`;
-            const footer = (nextId, nextText, prevId, prevText) => `<footer class="flex-shrink-0 pt-4 flex gap-4">${prevId ? `<button id="${prevId}" class="w-full py-3 text-lg font-semibold rounded-xl no-outline" style="background-color: var(--bg-tertiary);">${prevText}</button>` : ''}<button id="${nextId}" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline" disabled>${nextText}</button></footer>`;
+            const header = (title) => `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-2xl font-bold">${title}</h2><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>`;
+            const footer = (nextId, nextText, prevId, prevText) => `<footer class="flex-shrink-0 pt-4 flex gap-4">${prevId ? `<button id="${prevId}" class="w-full py-3 text-lg font-semibold rounded-xl no-outline themed-transition" style="background-color: var(--bg-tertiary);">${prevText}</button>` : ''}<button id="${nextId}" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline" disabled>${nextText}</button></footer>`;
             
             let stepContent = '';
             switch(step) {
                 case 1:
-                    stepContent = `${header('Шаг 1/3: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
+                    stepContent = `${header('Шаг 1/3: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg themed-transition" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
                     
@@ -432,11 +510,11 @@
                         state.adminFlowData.lessons.forEach((lesson, index) => {
                             const uniqueId = `file-${state.adminFlowData.date}-${index}`;
                             mainEl.innerHTML += `
-                                <div class="p-3 rounded-lg mb-2" style="background-color:var(--bg-secondary);">
+                                <div class="p-3 rounded-lg mb-2 themed-transition" style="background-color:var(--bg-secondary);">
                                     <p class="font-bold">${lesson.subject} <span class="text-sm font-normal" style="color:var(--text-secondary);">${lesson.time}</span></p>
-                                    <textarea class="w-full mt-2 p-2 text-sm rounded-lg" style="background-color: var(--bg-tertiary);" data-index="${index}" placeholder="ДЗ, если нужно исправить...">${lesson.homework_text || ''}</textarea>
+                                    <textarea class="w-full mt-2 p-2 text-sm rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" data-index="${index}" placeholder="ДЗ, если нужно исправить...">${lesson.homework_text || ''}</textarea>
                                     <div class="mt-2">
-                                        <label for="${uniqueId}" class="file-input-label"><span>Прикрепить файлы</span></label>
+                                        <label for="${uniqueId}" class="file-input-label themed-transition"><span>Прикрепить файлы</span></label>
                                         <input type="file" multiple class="hidden" data-index="${index}" id="${uniqueId}">
                                         <span id="label-${uniqueId}" class="text-sm ml-2" style="color: var(--text-secondary);"></span>
                                     </div>
@@ -499,6 +577,7 @@
                 await scheduleRef.remove();
                 for (const lesson of lessons) { await scheduleRef.push().set(lesson); }
                 showStatus('Расписание успешно опубликовано!', false);
+                renderHomeworkForDate(new Date(date));
             } catch (err) { showStatus(`Ошибка публикации: ${err.message}`, true);
             } finally { hideLoader(); closeModal(); }
         }
