@@ -1,588 +1,305 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KUZBOOK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GigaChat Тестовый Чат</title>
+    <!-- Подключение Tailwind CSS для стилей -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- AI Solution Formatting -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhs+itH6blOKdeIFcEVR0JFeSdGZPNzDUxVRuDdiQ82A0O" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIOOTenRwDCFsanmGpp1GBL2alMplK2UrhtCubo7oTpFns7/vLS" crossorigin="anonymous"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Конфигурация шрифтов Tailwind -->
     <style>
-        :root {
-            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.7); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
         }
-        html[data-theme='light'] {
-            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.7); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
-        .glass-header { position: sticky; top: 0; z-index: 10; background-color: var(--bg-header); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
-        .glass-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; background-color: var(--bg-header); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding-bottom: var(--safe-area-bottom); border-top: 1px solid var(--border-color); }
-        main { padding-bottom: calc(var(--safe-area-bottom) + 70px); }
-        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
-        .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
-        .accent-button:disabled { background-color: var(--text-secondary); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .no-outline:focus { outline: none; box-shadow: none; }
-        .horizontal-scroll::-webkit-scrollbar { display: none; }
-        .horizontal-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .modal { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(100%); opacity: 0; pointer-events: none; }
-        .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
-        .modal.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        
-        .scale-in-up { animation: scaleInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
-        @keyframes scaleInUp {
-            from { opacity: 0; transform: translateY(40px) scale(0.9); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: transparent; width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
-        .checkbox-custom:checked { background-color: var(--accent); border-color: var(--accent); }
-        .checkbox-custom:checked::after { content: ''; position: absolute; left: 0.45rem; top: 0.15rem; width: 0.4rem; height: 0.8rem; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
-        .date-scroller-btn { position: relative; transition: color 0.3s ease; }
-        .date-scroller-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; animation: underlineGrow 0.3s ease; }
-        @keyframes underlineGrow { from { width: 0; left: 50%; } to { width: 50%; left: 25%; } }
-        .screen { position: absolute; top: 0; left: 0; right: 0; height: 100%; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .screen.left { transform: translateX(-100%); }
-        .screen.right { transform: translateX(100%); }
-        .screen.center { transform: translateX(0); }
-        #auth-canvas { position: absolute; inset: 0; width: 100%; height: 100%; filter: blur(40px); opacity: 0.6; }
-        .auth-input { background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); color: white; }
-        .auth-input::placeholder { color: rgba(255, 255, 255, 0.5); }
-        .loader { display: flex; justify-content: center; align-items: center; }
-        .loader div { width: 0.75rem; height: 0.75rem; background-color: var(--accent); border-radius: 50%; margin: 0 0.25rem; animation: pulse 1.4s infinite ease-in-out both; }
-        .loader div:nth-child(1) { animation-delay: -0.32s; }
-        .loader div:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-        #loader-container { position: absolute; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
-        #ai-solution-content p { margin-bottom: 0.75rem; } #ai-solution-content h1, #ai-solution-content h2, #ai-solution-content h3 { font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.5rem; } #ai-solution-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; } #ai-solution-content code { background-color: var(--bg-secondary); padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
-        .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
-        .file-input-label:hover { background-color: var(--accent); color: white; }
     </style>
 </head>
-<body class="overflow-hidden">
+<body class="h-screen flex items-center justify-center p-4">
 
-    <div id="app-container" class="relative h-screen w-screen overflow-hidden">
-        <!-- Auth Screen -->
-        <div id="screen-auth" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500 overflow-hidden" style="background-color: #000000;">
-            <canvas id="auth-canvas"></canvas>
-            <div id="auth-container" class="z-10 w-full max-w-sm">
-                <!-- Login/Register form will be injected here -->
+    <!-- Основной контейнер чата -->
+    <div id="chat-container" class="bg-white rounded-xl shadow-2xl flex flex-col w-full max-w-xl h-[90vh] md:h-[80vh]">
+
+        <!-- Заголовок -->
+        <header class="p-4 bg-green-600 text-white rounded-t-xl shadow-lg flex items-center justify-between">
+            <h1 class="text-2xl font-bold">GigaChat Тест</h1>
+            <span id="status-indicator" class="text-sm font-medium opacity-70">
+                Подключение...
+            </span>
+        </header>
+
+        <!-- Область сообщений -->
+        <div id="messages-area" class="flex-grow p-4 space-y-4 overflow-y-auto custom-scrollbar">
+            <!-- Сообщения будут добавлены сюда -->
+            <div class="flex justify-start">
+                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-sm shadow-md max-w-[80%]">
+                    <p class="font-semibold">GigaChat:</p>
+                    <p>Добро пожаловать в GigaChat. Начните общение, чтобы получить токен доступа.</p>
+                </div>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div id="content-wrapper" class="opacity-0 transition-opacity duration-500 w-full h-full">
-            <div id="loader-container" class="opacity-0 pointer-events-none"><div class="loader"><div></div><div></div><div></div></div></div>
-            <div id="screen-main" class="screen center flex-col overflow-y-auto">
-                <header class="glass-header p-4 flex-shrink-0">
-                    <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
-                    <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
-                </header>
-                <main id="homework-list" class="flex-grow p-4"></main>
-            </div>
-            <div id="screen-profile" class="screen right flex-col overflow-y-auto">
-                 <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between">
-                    <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
-                     <button id="btn-logout" class="p-2 rounded-lg" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
-                </header>
-                <main class="flex-grow p-4 space-y-6">
-                    <div class="flex flex-col items-center gap-4 p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
-                        <div class="relative">
-                            <img id="profile-icon" src="https://placehold.co/80x80/000000/FFFFFF?text=K" class="w-20 h-20 rounded-full object-cover">
-                            <label for="profile-icon-upload" class="absolute bottom-0 right-0 p-1.5 rounded-full cursor-pointer" style="background-color: var(--accent);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                            </label>
-                            <input type="file" id="profile-icon-upload" class="hidden" accept="image/*">
-                        </div>
-                        <div><h2 id="profile-name" class="text-2xl font-bold text-center"></h2><p id="profile-login" style="color: var(--text-secondary);" class="text-center"></p></div>
-                    </div>
+        <!-- Область ввода -->
+        <div class="p-4 border-t border-gray-200 flex items-center space-x-3">
+            <input type="text" id="user-input" placeholder="Введите ваше сообщение..."
+                   class="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-150"
+                   onkeydown="if(event.key === 'Enter') document.getElementById('send-button').click()">
 
-                    <div class="p-4 rounded-2xl" style="background-color: var(--bg-secondary);">
-                        <h3 class="text-lg font-bold mb-4">Настройки</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="font-medium mb-2 block">Тема</label>
-                                <div class="flex gap-2">
-                                    <button id="theme-light-btn" class="w-full py-2 rounded-lg" data-theme="light">Светлая</button>
-                                    <button id="theme-dark-btn" class="w-full py-2 rounded-lg" data-theme="dark">Тёмная</button>
-                                </div>
-                            </div>
-                             <button id="change-name-btn" class="w-full text-left p-3 rounded-lg flex justify-between items-center" style="background-color: var(--bg-tertiary);">
-                                <span>Сменить имя</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                </main>
-            </div>
-            <div id="screen-admin" class="screen right flex-col overflow-y-auto">
-                <header class="glass-header p-4 flex-shrink-0"><h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1></header>
-                <main class="flex-grow p-4 space-y-6">
-                    <button id="admin-fill-hw" class="w-full p-6 rounded-2xl text-left flex items-center justify-between" style="background-color: var(--bg-secondary);">
-                        <div><h2 class="text-xl font-bold">Заполнить ДЗ</h2><p class="text-sm" style="color: var(--text-secondary);">Автоматически с помощью AI</p></div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                </main>
-            </div>
-            <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px]"></nav>
+            <button id="send-button"
+                    class="bg-green-600 text-white p-3 rounded-xl shadow-lg hover:bg-green-700 transition duration-150 disabled:bg-gray-400 disabled:shadow-none"
+                    onclick="handleSend()">
+                <svg id="send-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+                <svg id="loading-spinner" class="w-6 h-6 animate-spin hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
         </div>
-        <div id="admin-status" class="text-center p-4 rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none fixed bottom-20 left-4 right-4 z-30"></div>
-        <!-- Modals -->
-        <div id="modal-overlay" class="modal-overlay fixed inset-0 z-20"></div>
-        <div id="modal-lesson" class="modal fixed inset-0 z-30 flex flex-col p-4" style="background-color: var(--bg-primary); padding-top: calc(var(--safe-area-top) + 1rem);"></div>
-        <div id="modal-ai-solution" class="modal fixed inset-0 z-50 flex flex-col p-4" style="background-color: var(--bg-primary); padding-top: calc(var(--safe-area-top) + 1rem);"></div>
-        <div id="modal-admin-flow" class="modal fixed inset-0 z-40 flex flex-col p-4" style="background-color: var(--bg-primary); padding-top: calc(var(--safe-area-top) + 1rem);"></div>
-        <div id="modal-settings" class="modal fixed inset-0 z-40 flex items-center justify-center p-4"></div>
+
     </div>
 
     <script>
-        // --- CONFIG ---
-        const firebaseConfig = { databaseURL: "https://elevate-4e187-default-rtdb.europe-west1.firebasedatabase.app/" };
-        const CLOUDINARY_API_KEY = '238868418732411';
-        const CLOUDINARY_UPLOAD_PRESET = 'LonePreset';
-        const CLOUDINARY_API_SECRET = 'CfiHkDagD2y7F7i9o2dbSROenA4';
-        const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
+        // =======================================================
+        // --- КОНФИГУРАЦИЯ БЕЗОПАСНОСТИ (ОЧЕНЬ ВАЖНО) ---
+        // Хранение ключей в этом файле небезопасно и используется ТОЛЬКО
+        // для демонстрационных или личных тестовых целей, как вы и просили.
+        // =======================================================
 
-        // --- INIT ---
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const TG = window.Telegram.WebApp;
+        const AUTHORIZATION_KEY = "MDE5OWRkN2ItY2QyNC03Mjg2LWI4ZGUtZGMyNmUzYWE5NThiOjYzZTFmOTgzLWRmNmMtNGVkOS1hMDU4LWExNjk4ZGY3NGZiMQ==";
+        const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
+        const CHAT_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
+        const MODEL = 'GigaChat-Pro';
+        const SCOPE = 'GIGACHAT_API_PERS';
+        const MAX_RETRIES = 3;
 
-        // --- DOM & STATE ---
-        const dom = { auth: document.getElementById('screen-auth'), authContainer: document.getElementById('auth-container'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), solution: document.getElementById('modal-ai-solution'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'profile'], adminFlowData: {} };
-        let currentOpenModal = null, animationFrameId;
+        // =======================================================
+        // --- ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
+        // =======================================================
 
-        // --- UTILS ---
-        const vibrate = () => TG.HapticFeedback?.impactOccurred('light');
-        const showLoader = () => dom.loader.classList.remove('opacity-0', 'pointer-events-none');
-        const hideLoader = () => dom.loader.classList.add('opacity-0', 'pointer-events-none');
-        const showStatus = (message, isError) => { dom.adminStatus.textContent = message; dom.adminStatus.className = `text-center p-4 rounded-lg opacity-100 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white pointer-events-none fixed bottom-20 left-4 right-4 z-30`; setTimeout(() => { dom.adminStatus.classList.remove('opacity-100'); }, 4000); };
-        const fileToPart = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve({ inlineData: { mimeType: file.type, data: reader.result.split(',')[1] } }); reader.onerror = reject; reader.readAsDataURL(file); });
-        
-        // --- AUTH ---
-        function initAuthAnimation() {
-            const canvas = document.getElementById('auth-canvas'); if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let circles = [];
-            const resizeCanvas = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-            class Circle {
-                constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.radius = Math.random() * 150 + 50; this.vx = Math.random() * 0.4 - 0.2; this.vy = Math.random() * 0.4 - 0.2; this.color = `rgba(${Math.random() * 50}, ${Math.random() * 100 + 100}, 255, ${Math.random() * 0.5 + 0.1})`; }
-                update() { this.x += this.vx; this.y += this.vy; if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1; if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1; }
-                draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); }
-            }
-            const animate = () => { if (!dom.auth.style.display || dom.auth.style.display === 'none') return; ctx.clearRect(0, 0, canvas.width, canvas.height); circles.forEach(c => { c.update(); c.draw(); }); animationFrameId = requestAnimationFrame(animate); };
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas(); for (let i = 0; i < 5; i++) circles.push(new Circle());
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            animate();
-        }
-        function renderAuthForm(type = 'login') {
-            const isLogin = type === 'login';
-            dom.authContainer.innerHTML = `<div class="fade-in-up"><h1 class="text-6xl font-extrabold tracking-tighter text-white">KUZBOOK</h1><p class="mt-2 text-lg text-gray-200">${isLogin ? 'Вход в аккаунт' : 'Создание аккаунта'}</p></div><form id="auth-form" class="mt-8 space-y-4">${!isLogin ? `<input id="auth-fullname" type="text" placeholder="Имя и Фамилия" class="auth-input w-full p-4 text-lg rounded-xl no-outline fade-in-up" style="animation-delay: 0.1s;" required>` : ''}<input id="auth-login" type="text" placeholder="Логин" class="auth-input w-full p-4 text-lg rounded-xl no-outline fade-in-up" style="animation-delay: 0.2s;" required autocomplete="username"><input id="auth-password" type="password" placeholder="Пароль" class="auth-input w-full p-4 text-lg rounded-xl no-outline fade-in-up" style="animation-delay: 0.3s;" required autocomplete="current-password"><button type="submit" class="accent-button w-full py-4 text-lg font-semibold rounded-xl no-outline fade-in-up" style="animation-delay: 0.4s;">${isLogin ? 'Войти' : 'Создать'}</button></form><button id="auth-switch" class="mt-6 text-gray-300 fade-in-up" style="animation-delay: 0.5s;">${isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}</button>`;
-            document.getElementById('auth-switch').addEventListener('click', () => renderAuthForm(isLogin ? 'register' : 'login'));
-            document.getElementById('auth-form').addEventListener('submit', isLogin ? handleLogin : handleRegister);
-        }
-        
-        async function handleLogin(e) {
-            e.preventDefault(); vibrate(); showLoader();
-            const login = document.getElementById('auth-login').value.trim().toLowerCase();
-            const password = document.getElementById('auth-password').value;
-            if (!login || !password) { alert('Пожалуйста, введите логин и пароль.'); hideLoader(); return; }
-            try {
-                const snapshot = await db.ref('users/' + login).once('value');
-                const user = snapshot.val();
-                if (user && user.password === password) { startAppSession(user); } else { alert('Неверный логин или пароль.'); }
-            } catch (error) { console.error("Login error:", error); alert('Ошибка входа. Попробуйте позже.');
-            } finally { hideLoader(); }
-        }
-        
-        async function handleRegister(e) {
-            e.preventDefault(); vibrate(); showLoader();
-            const fullName = document.getElementById('auth-fullname').value.trim();
-            const login = document.getElementById('auth-login').value.trim().toLowerCase();
-            const password = document.getElementById('auth-password').value;
-            if (!fullName || !login || !password) { alert('Пожалуйста, заполните все поля.'); hideLoader(); return; }
-            try {
-                const snapshot = await db.ref('users/' + login).once('value');
-                if (snapshot.exists()) { alert('Пользователь с таким логином уже существует.'); hideLoader(); return; }
-                const isAdmin = login.toLowerCase() === 'kuzbook' && password === 'KUZ25';
-                const newUser = { login, password, fullName, isAdmin, theme: 'dark' };
-                await db.ref('users/' + login).set(newUser);
-                startAppSession(newUser);
-            } catch (error) { console.error("Registration error:", error); alert('Ошибка регистрации. Попробуйте позже.');
-            } finally { hideLoader(); }
-        }
-        
-        function startAppSession(userData) {
-            state.user = userData;
-            localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
-            dom.auth.classList.add('opacity-0');
-            if(animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
-            setTimeout(() => {
-                dom.auth.style.display = 'none';
-                if (state.user.isAdmin) state.screens.push('admin');
-                setTheme(state.user.theme || 'dark');
-                dom.contentWrapper.classList.add('opacity-100');
-                renderNav(); setupDateScroller(); renderHomeworkForDate(new Date()); renderProfile();
-                if(state.user.isAdmin) setupAdminPanel();
-            }, 500);
-        }
+        let accessToken = null;
+        let tokenExpiry = 0; // Время истечения токена в миллисекундах
+        let isSending = false;
+        let chatHistory = [
+            { role: "system", content: "Ты — полезный, дружелюбный и креативный помощник GigaChat." }
+        ];
 
-        async function init() {
-            TG.ready(); TG.expand();
-            const savedUserJSON = localStorage.getItem('kuzbook_user');
-            if (savedUserJSON) {
-                const savedUser = JSON.parse(savedUserJSON);
-                showLoader();
-                // Force logout check
-                const snapshot = await db.ref('users/' + savedUser.login).once('value');
-                if (snapshot.exists()) {
-                    hideLoader();
-                    startAppSession(snapshot.val());
-                } else {
-                    localStorage.clear();
-                    hideLoader();
-                    location.reload(); // Force reload to show auth screen
-                }
+        // =======================================================
+        // --- Вспомогательные функции UI ---
+        // =======================================================
+
+        const messagesArea = document.getElementById('messages-area');
+        const inputField = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const sendIcon = document.getElementById('send-icon');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const statusIndicator = document.getElementById('status-indicator');
+
+        function setSending(state) {
+            isSending = state;
+            sendButton.disabled = state;
+            inputField.disabled = state;
+            if (state) {
+                sendIcon.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                statusIndicator.textContent = "Отправка...";
             } else {
-                dom.auth.style.display = 'flex';
-                initAuthAnimation();
-                renderAuthForm('login');
+                sendIcon.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                statusIndicator.textContent = accessToken ? "Подключено" : "Ошибка токена";
             }
         }
-        
-        async function uploadToCloudinary(file) {
-            const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); formData.append('api_key', CLOUDINARY_API_KEY);
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
-            if (!response.ok) { const err = await response.json(); throw new Error(`Cloudinary upload failed: ${err.error.message}`); }
-            const data = await response.json();
-            return data.secure_url;
-        }
 
-        // --- PROFILE & SETTINGS ---
-        function renderProfile() {
-            if (!state.user || !state.user.fullName) return;
-            document.getElementById('profile-name').textContent = state.user.fullName;
-            document.getElementById('profile-login').textContent = `@${state.user.login}`;
-            const initial = state.user.fullName.charAt(0) || '?';
-            document.getElementById('profile-icon').src = state.user.profileIcon || `https://placehold.co/80x80/000000/FFFFFF?text=${initial}`;
-            document.getElementById('profile-icon-upload').addEventListener('change', handleProfileIconUpload);
-            document.getElementById('btn-logout').addEventListener('click', () => { vibrate(); localStorage.clear(); window.location.reload(); });
-            // Settings listeners
-            document.getElementById('theme-light-btn').addEventListener('click', () => handleThemeChange('light'));
-            document.getElementById('theme-dark-btn').addEventListener('click', () => handleThemeChange('dark'));
-            document.getElementById('change-name-btn').addEventListener('click', () => openSettingsModal('name'));
-            updateThemeButtons();
-        }
+        function renderMessages() {
+            // Очищаем область сообщений, исключая системное сообщение
+            messagesArea.innerHTML = '';
 
-        function openSettingsModal(type) {
-            if (type === 'name') {
-                modals.settings.innerHTML = `
-                    <div class="w-full max-w-sm p-6 rounded-2xl scale-in-up" style="background-color: var(--bg-secondary); opacity: 0;">
-                        <h3 class="text-xl font-bold mb-4">Сменить имя</h3>
-                        <input id="settings-new-name" type="text" class="w-full p-3 rounded-lg" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}">
-                        <div class="flex gap-4 mt-6">
-                            <button id="settings-cancel-btn" class="w-full py-3 rounded-lg" style="background-color: var(--bg-tertiary);">Отмена</button>
-                            <button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button>
+            // Отображаем только сообщения пользователя и ассистента
+            const displayMessages = chatHistory.filter(msg => msg.role !== 'system');
+
+            displayMessages.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const messageHtml = `
+                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                        <div class="p-3 rounded-xl shadow-md max-w-[80%] ${
+                            isUser
+                                ? 'bg-green-500 text-white rounded-br-sm'
+                                : 'bg-gray-200 text-gray-800 rounded-bl-sm'
+                        }">
+                            <p class="font-semibold ${isUser ? 'hidden' : 'block'}">GigaChat:</p>
+                            <p>${msg.content.replace(/\n/g, '<br>')}</p>
                         </div>
-                    </div>`;
-                openModal(modals.settings);
-                document.getElementById('settings-cancel-btn').addEventListener('click', closeModal);
-                document.getElementById('settings-save-name-btn').addEventListener('click', handleNameChange);
-            }
-        }
-        
-        async function handleNameChange() {
-            vibrate();
-            const newName = document.getElementById('settings-new-name').value.trim();
-            if (newName && newName !== state.user.fullName) {
-                showLoader();
-                try {
-                    await db.ref(`users/${state.user.login}/fullName`).set(newName);
-                    state.user.fullName = newName;
-                    localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
-                    renderProfile();
-                    showStatus('Имя успешно изменено!', false);
-                } catch (error) { showStatus('Ошибка при смене имени.', true); }
-                finally { hideLoader(); closeModal(); }
-            } else { closeModal(); }
-        }
-
-        async function handleThemeChange(theme) {
-            if (theme !== state.user.theme) {
-                setTheme(theme);
-                state.user.theme = theme;
-                updateThemeButtons();
-                await db.ref(`users/${state.user.login}/theme`).set(theme);
-                localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
-            }
-        }
-
-        function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
-        function updateThemeButtons() {
-            const lightBtn = document.getElementById('theme-light-btn');
-            const darkBtn = document.getElementById('theme-dark-btn');
-            if(state.user.theme === 'light') {
-                lightBtn.style.backgroundColor = 'var(--accent)'; lightBtn.style.color = 'white';
-                darkBtn.style.backgroundColor = 'var(--bg-tertiary)'; darkBtn.style.color = 'var(--text-primary)';
-            } else {
-                darkBtn.style.backgroundColor = 'var(--accent)'; darkBtn.style.color = 'white';
-                lightBtn.style.backgroundColor = 'var(--bg-tertiary)'; lightBtn.style.color = 'var(--text-primary)';
-            }
-        }
-        
-        async function handleProfileIconUpload(e) {
-            const file = e.target.files[0]; if (!file) return;
-            showLoader();
-            try {
-                const imageUrl = await uploadToCloudinary(file);
-                await db.ref(`users/${state.user.login}/profileIcon`).set(imageUrl);
-                state.user.profileIcon = imageUrl; localStorage.setItem('kuzbook_user', JSON.stringify(state.user));
-                document.getElementById('profile-icon').src = imageUrl;
-                showStatus('Иконка профиля обновлена!', false);
-            } catch (error) { console.error('Profile icon upload error:', error); showStatus(`Ошибка загрузки: ${error.message}`, true);
-            } finally { hideLoader(); }
-        }
-
-        // --- NAVIGATION & UI ---
-        function renderNav() {
-            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
-            if (state.user?.isAdmin) { navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; }
-            dom.nav.innerHTML = navHTML;
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
-            updateNavButtons();
-        }
-        function navigate() { vibrate(); const newScreen = this.dataset.screen; if (newScreen === state.currentScreen) return; const oldScreenEl = document.getElementById(`screen-${state.currentScreen}`); const newScreenEl = document.getElementById(`screen-${newScreen}`); const oldIndex = state.screens.indexOf(state.currentScreen); const newIndex = state.screens.indexOf(newScreen); if (newIndex > oldIndex) { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('left'); newScreenEl.classList.remove('right'); newScreenEl.classList.add('center'); } else { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('right'); newScreenEl.classList.remove('left'); newScreenEl.classList.add('center'); } state.currentScreen = newScreen; updateNavButtons(); }
-        function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
-        
-        // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { vibrate(); const currentActive = scroller.querySelector('.active'); if (currentActive) { currentActive.classList.remove('active'); currentActive.style.color = 'var(--text-secondary)'; } e.currentTarget.classList.add('active'); e.currentTarget.style.color = 'var(--accent)'; renderHomeworkForDate(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
-        
-        function renderHomeworkForDate(date) {
-            const list = document.getElementById('homework-list');
-            list.innerHTML = `<div class="flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
-            const dateString = date.toISOString().split('T')[0];
-            const scheduleRef = db.ref('schedule/' + dateString);
-            scheduleRef.on('value', async (snapshot) => {
-                const scheduleData = snapshot.val();
-                if (!scheduleData) { list.innerHTML = `<div class="text-center mt-10"><img src="https://placehold.co/128x128/1a1a1a/a0a0a0?text=Пусто" class="mx-auto w-32 h-32 rounded-lg opacity-50"><p class="mt-4" style="color: var(--text-secondary);">Еще нет данных</p></div>`; return; }
-                const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
-                const statusSnapshot = await db.ref(`homework_status/${state.user.login}`).once('value');
-                const statuses = statusSnapshot.val() || {};
-                const completedIds = new Set(Object.keys(statuses).filter(key => statuses[key] === true));
-                list.innerHTML = '';
-                schedule.forEach((hw, index) => {
-                    const hasHw = hw.homework_text && hw.homework_text.trim() !== '';
-                    const isCompleted = completedIds.has(hw.id);
-                    const item = document.createElement('div');
-                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up'; 
-                    item.style.backgroundColor = 'var(--bg-secondary)';
-                    item.style.animationDelay = `${index * 70}ms`;
-                    item.innerHTML = `<div class="flex-grow"><p class="font-bold text-lg">${hw.subject}</p><p class="text-sm" style="color: var(--text-secondary);">${hw.time}</p></div>${hasHw ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : '<div class="w-6"></div>'}<input type="checkbox" data-schedule-id="${hw.id}" class="checkbox-custom flex-shrink-0" ${isCompleted ? 'checked' : ''}>`;
-                    if (hasHw) { item.addEventListener('click', (e) => { if (e.target.type !== 'checkbox') openModal(modals.lesson, hw); }); }
-                    item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
-                    list.appendChild(item);
-                });
+                    </div>
+                `;
+                messagesArea.insertAdjacentHTML('beforeend', messageHtml);
             });
-        }
-        async function handleCheckboxChange(e) { vibrate(); const scheduleId = e.target.dataset.scheduleId; const isChecked = e.target.checked; db.ref(`homework_status/${state.user.login}/${scheduleId}`).set(isChecked ? true : null); } // Use null to delete
-        
-        // --- MODALS & AI ---
-        function setupAdminPanel() { document.getElementById('admin-fill-hw').addEventListener('click', () => { vibrate(); openAdminHwFlow(); }); }
-        function openModal(modal, data) { modals.overlay.classList.add('active'); currentOpenModal = modal; populateModal(modal, data); modal.classList.add('active'); TG.BackButton.show(); }
-        function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
-        async function callGemini(prompt, imageParts = []) {
-            const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
-            try {
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) throw new Error("Не удалось получить ответ от AI.");
-                return text;
-            } catch (error) { console.error("Fetch/Gemini Error:", error); throw error; }
-        }
-        function formatAiSolution(text) { const formattedHtml = marked.parse(text, { gfm: true, breaks: true }); const tempDiv = document.createElement('div'); tempDiv.innerHTML = formattedHtml; tempDiv.innerHTML = tempDiv.innerHTML.replace(/\$\$(.*?)\$\$/g, (match, equation) => { try { return katex.renderToString(equation, { displayMode: true, throwOnError: false }); } catch (e) { return match; } }).replace(/\$(.*?)\$/g, (match, equation) => { try { return katex.renderToString(equation, { throwOnError: false }); } catch (e) { return match; } }); return tempDiv.innerHTML; }
-        async function populateModal(modal, data) {
-            modal.innerHTML = '';
-            switch(modal) {
-                case modals.lesson:
-                    const hwFiles = (data.attachments || []).map(fileUrl => `<a href="${fileUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline" style="background-color: var(--bg-primary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg><span class="truncate">Прикрепленный файл</span></a>`).join('');
-                    modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto"><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${hwFiles}</div></main><footer class="flex-shrink-0 pt-4"><button id="btn-ai-solve" class="accent-button w-full py-4 text-lg font-semibold rounded-xl no-outline">Решить с AI</button></footer>`;
-                    modal.querySelector('#btn-ai-solve').addEventListener('click', () => { vibrate(); openAiSolution(data); });
-                    break;
-                case modals.solution:
-                    modal.innerHTML = `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-3xl font-bold">Решение от AI</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header><main class="flex-grow overflow-y-auto" id="ai-solution-content"><div class="flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div></main>`;
-                    try {
-                        let prompt = `Подробно реши следующее домашнее задание по предмету "${data.subject}":\n\n${data.homework_text}.\n\nОтвет предоставь в формате Markdown. Если нужно, используй LaTeX для всех математических формул, оборачивая их в одинарные ($...$) или двойные ($$..$$) доллары. PS: ЭТО ТОЛЬКО ЕСЛИ НУЖНО!`;
-                        const solutionText = await callGemini(prompt);
-                        document.getElementById('ai-solution-content').innerHTML = formatAiSolution(solutionText);
-                    } catch (e) { document.getElementById('ai-solution-content').innerHTML = `<p class="text-red-500">Ошибка при получении решения: ${e.message}</p>`; }
-                    break;
-            }
-            modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
-        }
-        function openAiSolution(lessonData) { closeModal(); openModal(modals.solution, lessonData); }
 
-        function openAdminHwFlow() { state.adminFlowData = { attachments: {} }; openModal(modals.admin); renderAdminHwStep(1); }
+            // Прокрутка вниз
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
 
-        function renderAdminHwStep(step) {
-            const modal = modals.admin; let content = '';
-            const header = (title) => `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-2xl font-bold">${title}</h2><button class="modal-close-btn p-2 rounded-full" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>`;
-            const footer = (nextId, nextText, prevId, prevText) => `<footer class="flex-shrink-0 pt-4 flex gap-4">${prevId ? `<button id="${prevId}" class="w-full py-3 text-lg font-semibold rounded-xl no-outline" style="background-color: var(--bg-tertiary);">${prevText}</button>` : ''}<button id="${nextId}" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline" disabled>${nextText}</button></footer>`;
-            switch(step) {
-                case 1:
-                    content = `${header('Шаг 1/5: Выберите дату')}<main class="flex-grow flex flex-col justify-center items-center text-center"><p class="mb-4">На какую дату вы хотите заполнить ДЗ?</p><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg" style="background-color: var(--bg-tertiary); color-scheme: dark;"></main>${footer('admin-hw-s1-next', 'Продолжить')}`;
-                    modal.innerHTML = content;
-                    document.getElementById('admin-hw-date-select').addEventListener('change', (e) => { if(e.target.value) { state.adminFlowData.date = e.target.value; document.getElementById('admin-hw-s1-next').disabled = false; }});
-                    document.getElementById('admin-hw-s1-next').addEventListener('click', () => { vibrate(); renderAdminHwStep(2); });
-                    break;
-                case 2:
-                    content = `${header('Шаг 2/5: Расписание')}<main class="flex-grow flex flex-col justify-center items-center text-center"><p class="mb-4">Прикрепите фото расписания уроков (сетку).</p><label for="admin-hw-schedule-file" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать фото</label><input type="file" id="admin-hw-schedule-file" accept="image/*" class="hidden"><div id="admin-hw-preview" class="mt-4"></div></main>${footer('admin-hw-s2-next', 'Продолжить', 'admin-hw-s2-back', 'Назад')}`;
-                    modal.innerHTML = content;
-                    document.getElementById('admin-hw-s2-back').addEventListener('click', () => renderAdminHwStep(1));
-                    document.getElementById('admin-hw-schedule-file').addEventListener('change', (e) => { const file = e.target.files[0]; if(file) { state.adminFlowData.scheduleFile = file; const reader = new FileReader(); reader.onload = (ev) => { document.getElementById('admin-hw-preview').innerHTML = `<img src="${ev.target.result}" class="max-h-48 rounded-lg">`; }; reader.readAsDataURL(file); document.getElementById('admin-hw-s2-next').disabled = false; }});
-                    document.getElementById('admin-hw-s2-next').addEventListener('click', () => { vibrate(); renderAdminHwStep(3); processSchedulePhoto(); });
-                    break;
-                 case 3:
-                    content = `${header('Шаг 3/5: Домашнее задание')}<main id="admin-hw-s3-main" class="flex-grow flex flex-col justify-center items-center text-center"><div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует расписание...</p></main>${footer('admin-hw-s3-next', 'Продолжить', 'admin-hw-s3-back', 'Назад')}`;
-                    modal.innerHTML = content;
-                    document.getElementById('admin-hw-s3-back').addEventListener('click', () => renderAdminHwStep(2));
-                    break;
-                case 4:
-                    content = `${header('Шаг 4/5: Файлы')}<main id="admin-hw-s4-main" class="flex-grow overflow-y-auto"><p class="mb-4">Прикрепите доп. файлы к урокам (необязательно).</p></main>${footer('admin-hw-s4-next', 'Проверить', 'admin-hw-s4-back', 'Назад')}`;
-                    modal.innerHTML = content;
-                    document.getElementById('admin-hw-s4-next').disabled = false;
-                    document.getElementById('admin-hw-s4-back').addEventListener('click', () => renderAdminHwStep(3));
-                    document.getElementById('admin-hw-s4-next').addEventListener('click', () => {vibrate(); renderAdminHwStep(5);});
-                    const mainEl = document.getElementById('admin-hw-s4-main');
-                    if(state.adminFlowData.lessons) {
-                        state.adminFlowData.lessons.forEach((lesson, index) => {
-                            const uniqueId = `file-${state.adminFlowData.date}-${index}`;
-                            mainEl.innerHTML += `
-                                <div class="p-3 rounded-lg mb-2" style="background-color:var(--bg-secondary);">
-                                    <p class="font-bold">${lesson.subject}</p>
-                                    <div class="mt-2">
-                                        <label for="${uniqueId}" class="file-input-label">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                                            <span>Прикрепить</span>
-                                        </label>
-                                        <input type="file" multiple class="hidden" data-date="${state.adminFlowData.date}" data-index="${index}" id="${uniqueId}">
-                                        <span id="label-${uniqueId}" class="text-sm ml-2" style="color: var(--text-secondary);"></span>
-                                    </div>
-                                </div>`;
-                        });
-                        // Add event listeners after populating innerHTML
-                        mainEl.querySelectorAll('input[type="file"]').forEach(input => {
-                            input.addEventListener('change', (e) => {
-                                const index = e.target.dataset.index;
-                                if (e.target.files.length > 0) {
-                                    state.adminFlowData.attachments[index] = e.target.files;
-                                    document.getElementById(`label-${e.target.id}`).textContent = `${e.target.files.length} файл(ов) выбрано`;
-                                } else {
-                                    delete state.adminFlowData.attachments[index];
-                                    document.getElementById(`label-${e.target.id}`).textContent = ``;
-                                }
-                            });
-                        });
+        function displayError(message) {
+            const errorHtml = `
+                <div class="flex justify-start">
+                    <div class="bg-red-200 text-red-800 p-3 rounded-xl rounded-bl-sm shadow-md max-w-[80%]">
+                        <p class="font-semibold">Ошибка:</p>
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+            messagesArea.insertAdjacentHTML('beforeend', errorHtml);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            statusIndicator.textContent = "Ошибка: См. консоль";
+        }
+
+        // =======================================================
+        // --- СЕТЕВЫЕ ФУНКЦИИ ---
+        // =======================================================
+
+        async function backoffFetch(url, options, maxRetries = MAX_RETRIES) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
                     }
-                    break;
-                case 5:
-                    content = `${header('Шаг 5/5: Проверка')}<main id="admin-hw-s5-main" class="flex-grow overflow-y-auto"><p class="mb-4">Проверьте результат перед публикацией.</p></main>${footer('admin-hw-publish', 'Опубликовать', 'admin-hw-s5-back', 'Назад')}`;
-                    modal.innerHTML = content;
-                    document.getElementById('admin-hw-s5-back').addEventListener('click', () => renderAdminHwStep(4));
-                    document.getElementById('admin-hw-publish').addEventListener('click', publishAdminHomework);
-                    const verifyEl = document.getElementById('admin-hw-s5-main');
-                    verifyEl.innerHTML += `<textarea class="w-full h-64 p-2 rounded font-mono text-sm" style="background-color: var(--bg-secondary);">${JSON.stringify(state.adminFlowData.lessons, null, 2)}</textarea>`;
-                    document.getElementById('admin-hw-publish').disabled = false;
-                    break;
+                    // Если ошибка 4xx/5xx, пробуем еще раз (кроме 401/403, которые могут указывать на проблему с токеном)
+                    if (response.status >= 400 && response.status !== 401 && response.status !== 403) {
+                        const errorData = await response.text();
+                        console.error(`Fetch attempt ${i + 1} failed with status ${response.status}: ${errorData}`);
+                    } else {
+                         // Для 401/403 или других невосстановимых ошибок выходим
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        throw error;
+                    }
+                    console.warn(`Attempt ${i + 1} failed. Retrying in ${2 ** i}s...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (2 ** i)));
+                }
             }
-            modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
+            throw new Error("Maximum retries reached.");
         }
-        
-        async function processSchedulePhoto() {
-            try {
-                const imagePart = await fileToPart(state.adminFlowData.scheduleFile);
-                const date = new Date(state.adminFlowData.date);
-                const dayOfWeek = ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'][date.getDay()];
-                const currentYear = date.getFullYear();
 
-                const prompt = `Проанализируй фото с расписанием уроков ТОЛЬКО для 8А класса. Текущий год: ${currentYear}. Мне нужно расписание ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date} (${dayOfWeek}). Извлеки из фото список уроков только для этого дня. ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи 'subject' (название предмета) и 'time' (время в формате ЧЧ:ММ-ЧЧ:ММ). НЕ ИСПОЛЬЗУЙ 'name', 'time_start' или 'time_end'. Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15'}]`;
-                const resultText = await callGemini(prompt, [imagePart]);
-                state.adminFlowData.lessons = JSON.parse(resultText.replace(/```json/g, '').replace(/```/g, ''));
+        async function getAccessToken() {
+            // Проверяем, не истек ли токен (с запасом 60 секунд)
+            if (accessToken && Date.now() < tokenExpiry - 60000) {
+                return accessToken;
+            }
+
+            statusIndicator.textContent = "Обновление токена...";
+
+            const body = new URLSearchParams({ scope: SCOPE }).toString();
+            const headers = {
+                'Authorization': 'Basic ' + AUTHORIZATION_KEY,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                // RqUID должен быть уникальным для каждого запроса токена
+                'RqUID': crypto.randomUUID(),
+                'Accept': 'application/json'
+            };
+
+            try {
+                const response = await backoffFetch(OAUTH_URL, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body,
+                });
+
+                const data = await response.json();
+
+                if (data.access_token) {
+                    accessToken = data.access_token;
+                    // Время жизни токена в секундах, переводим в мс и добавляем к текущему времени
+                    tokenExpiry = Date.now() + (data.expires_at || 3600) * 1000;
+                    statusIndicator.textContent = "Подключено";
+                    return accessToken;
+                } else {
+                    throw new Error("Token not found in response.");
+                }
+
+            } catch (error) {
+                console.error("Ошибка при получении токена GigaChat:", error);
+                displayError("Не удалось получить токен GigaChat. Проверьте ключ и консоль.");
+                accessToken = null;
+                tokenExpiry = 0;
+                setSending(false); // Отключаем, если была ошибка
+                return null;
+            }
+        }
+
+        async function sendMessage(prompt) {
+            const token = await getAccessToken();
+            if (!token) return;
+
+            // Добавляем сообщение пользователя в историю перед отправкой
+            chatHistory.push({ role: "user", content: prompt });
+
+            const payload = {
+                model: MODEL,
+                messages: chatHistory,
+                temperature: 0.7,
+            };
+
+            const headers = {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            try {
+                const response = await backoffFetch(CHAT_URL, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
                 
-                document.getElementById('admin-hw-s3-main').innerHTML = `<p class="mb-4">Расписание распознано. Теперь прикрепите фото с домашними заданиями на ${state.adminFlowData.date}.</p><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать фото ДЗ</label><input type="file" id="admin-hw-files" multiple accept="image/*" class="hidden"><div id="admin-hw-files-preview" class="mt-2 text-sm"></div>`;
-                document.getElementById('admin-hw-files').addEventListener('change', (e) => { state.adminFlowData.hwFiles = e.target.files; document.getElementById('admin-hw-files-preview').textContent = `${e.target.files.length} файлов выбрано.`; document.getElementById('admin-hw-s3-next').disabled = false; });
-                document.getElementById('admin-hw-s3-next').addEventListener('click', () => {vibrate(); processHomeworkPhotos(); });
-
-            } catch (e) { alert(`Ошибка AI: ${e.message}`); closeModal(); }
-        }
-        
-        async function processHomeworkPhotos() {
-            const mainEl = document.getElementById('admin-hw-s3-main');
-            mainEl.innerHTML = `<div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует ДЗ для ${state.adminFlowData.date}...</p>`;
-            try {
-                const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
-                const currentYear = new Date(state.adminFlowData.date).getFullYear();
-
-                const prompt = `Проанализируй эти фото с домашними заданиями. Текущий год: ${currentYear}. Для каждого урока из предоставленного JSON-списка, найди соответствующее ДЗ и время проведения на фото и дополни объект урока полем 'homework_text'. На фото есть фремя для каждого урока (со скольки до скольки). Ищи ДЗ для даты, близкой к ${state.adminFlowData.date}. Если для урока нет ДЗ, оставь его без изменений. НЕ ПИШИ НИЧЕГО ЛИШНЕГО! НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО ИТОГОВЫЙ JSON МАССИВ! \nСписок уроков: ${JSON.stringify(state.adminFlowData.lessons)}`;
-                const resultText = await callGemini(prompt, imageParts);
-                state.adminFlowData.lessons = JSON.parse(resultText.replace(/```json/g, '').replace(/```/g, ''));
-                renderAdminHwStep(4);
-            } catch(e) { alert(`Ошибка AI при анализе ДЗ: ${e.message}`); renderAdminHwStep(3); }
-        }
-
-        async function publishAdminHomework() {
-            vibrate(); showLoader();
-            try {
-                // Upload attachments and update lessons data
-                for (const index in state.adminFlowData.attachments) {
-                    const fileList = state.adminFlowData.attachments[index];
-                    let fileUrls = [];
-                    for(const file of fileList) { 
-                        const url = await uploadToCloudinary(file); 
-                        fileUrls.push(url); 
-                    }
-                    if (!state.adminFlowData.lessons[index].attachments) { 
-                        state.adminFlowData.lessons[index].attachments = []; 
-                    }
-                    state.adminFlowData.lessons[index].attachments.push(...fileUrls);
+                if (data.choices && data.choices.length > 0) {
+                    const assistantMessage = data.choices[0].message;
+                    chatHistory.push(assistantMessage);
+                } else {
+                    throw new Error("Не получен ответ от GigaChat.");
                 }
 
-                const date = state.adminFlowData.date;
-                const lessons = state.adminFlowData.lessons;
-                const scheduleRef = db.ref('schedule/' + date);
-                await scheduleRef.remove(); // Clear the day first
-                for (const lesson of lessons) { 
-                    await scheduleRef.push().set(lesson); 
-                }
-                showStatus('Расписание успешно опубликовано!', false);
-            } catch (err) { 
-                showStatus(`Ошибка публикации: ${err.message}`, true);
-            } finally { 
-                hideLoader(); 
-                closeModal(); 
+            } catch (error) {
+                console.error("Ошибка при отправке сообщения GigaChat:", error);
+                displayError(`Ошибка GigaChat: ${error.message}. Пожалуйста, попробуйте еще раз.`);
+                
+                // Удаляем последнее сообщение пользователя, чтобы он мог повторить запрос
+                chatHistory.pop(); 
             }
         }
 
-        TG.BackButton.onClick(closeModal);
-        document.addEventListener('DOMContentLoaded', init);
+        // =======================================================
+        // --- ОСНОВНОЙ ОБРАБОТЧИК ---
+        // =======================================================
+
+        async function handleSend() {
+            if (isSending) return;
+
+            const input = inputField.value.trim();
+            if (input === '') return;
+
+            inputField.value = ''; // Очистка поля ввода
+            setSending(true);
+            renderMessages(); // Отобразить сообщение пользователя
+
+            await sendMessage(input);
+
+            setSending(false);
+            renderMessages(); // Отобразить ответ GigaChat
+        }
+
+        // Первоначальная отрисовка
+        document.addEventListener('DOMContentLoaded', () => {
+             renderMessages();
+             // Устанавливаем статус "Ожидание ввода" до первого запроса токена
+             statusIndicator.textContent = "Ожидание ввода...";
+        });
+
     </script>
 </body>
 </html>
-
