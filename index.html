@@ -33,7 +33,7 @@
             background-color: var(--bg-header); 
             backdrop-filter: blur(24px); 
             -webkit-backdrop-filter: blur(24px);
-            transition: background-color 0.4s ease;
+            transition: background-color 0.4s ease, border-color 0.4s ease;
         }
         .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; }
@@ -155,46 +155,54 @@
 
         // --- AUTH & ONBOARDING ---
         async function init() {
-            TG.ready(); TG.expand();
-            setTheme(TG.colorScheme || 'dark');
-            TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
+            try {
+                TG.ready(); TG.expand();
+                setTheme(TG.colorScheme || 'dark');
+                TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
 
-            const tgUser = TG.initDataUnsafe?.user;
-            if (!tgUser) {
-                dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка: Не удалось получить данные Telegram. Пожалуйста, откройте приложение через Telegram.</p>`;
-                return;
-            }
-
-            const userRef = db.ref('users_tg/' + tgUser.id);
-            const snapshot = await userRef.once('value');
-            let userData = snapshot.val();
-
-            if (!userData) {
-                openModal(modals.onboarding, {
-                    tgUser,
-                    callback: async (fullName) => {
-                        const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: tgUser.photo_url, theme: TG.colorScheme || 'dark', isAdmin: ADMIN_TELEGRAM_IDS.includes(tgUser.id) };
-                        await userRef.set(newUser);
-                        startAppSession(newUser);
-                        closeModal();
-                    }
-                });
-            } else {
-                // Update user data on every launch
-                const updates = { username: tgUser.username, profileIcon: tgUser.photo_url };
-                if (ADMIN_TELEGRAM_IDS.includes(tgUser.id) && !userData.isAdmin) {
-                    updates.isAdmin = true;
+                const tgUser = TG.initDataUnsafe?.user;
+                if (!tgUser) {
+                    dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка: Не удалось получить данные Telegram.<br>Пожалуйста, откройте приложение через Telegram.</p>`;
+                    return;
                 }
-                await userRef.update(updates);
-                startAppSession({ ...userData, ...updates });
+
+                const userRef = db.ref('users_tg/' + tgUser.id);
+                const snapshot = await userRef.once('value');
+                let userData = snapshot.val();
+
+                if (!userData) {
+                    openModal(modals.onboarding, {
+                        tgUser,
+                        callback: async (fullName) => {
+                            const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: tgUser.photo_url, theme: TG.colorScheme || 'dark', isAdmin: ADMIN_TELEGRAM_IDS.includes(tgUser.id) };
+                            await userRef.set(newUser);
+                            startAppSession(newUser);
+                            closeModal();
+                        }
+                    });
+                } else {
+                    const updates = { username: tgUser.username, profileIcon: tgUser.photo_url };
+                    if (ADMIN_TELEGRAM_IDS.includes(tgUser.id) && !userData.isAdmin) {
+                        updates.isAdmin = true;
+                    }
+                    await userRef.update(updates);
+                    startAppSession({ ...userData, ...updates });
+                }
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка инициализации.<br>Попробуйте перезагрузить приложение.<br><small class="text-xs">${error.message}</small></p>`;
             }
         }
         
         function startAppSession(userData) {
             state.user = userData;
-            dom.initialLoader.classList.add('opacity-0', 'pointer-events-none');
+            dom.initialLoader.classList.add('opacity-0');
+            setTimeout(() => dom.initialLoader.style.display = 'none', 300);
+
             dom.contentWrapper.classList.add('opacity-100');
-            if (state.user.isAdmin && !state.screens.includes('admin')) state.screens.push('admin');
+            if (state.user.isAdmin && !state.screens.includes('admin')) {
+                state.screens.push('admin');
+            }
             renderNav(); 
             setupDateScroller(); 
             renderHomeworkForDate(new Date()); 
@@ -230,7 +238,7 @@
                         </button>
                     </div>
                 </div>`;
-            document.getElementById('change-name-btn').addEventListener('click', () => openModal(modals.settings, 'name'));
+            document.getElementById('change-name-btn').addEventListener('click', () => openModal(modals.settings));
         }
 
         async function handleNameChange() {
@@ -249,12 +257,18 @@
         }
         
         // --- NAVIGATION & UI ---
-        function renderNav() { /* ... unchanged ... */ }
-        function navigate() { /* ... unchanged ... */ }
-        function updateNavButtons() { /* ... unchanged ... */ }
+        function renderNav() {
+            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
+            if (state.user?.isAdmin) { navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; }
+            dom.nav.innerHTML = navHTML;
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
+            updateNavButtons();
+        }
+        function navigate() { vibrate(); const newScreen = this.dataset.screen; if (newScreen === state.currentScreen) return; const oldScreenEl = document.getElementById(`screen-${state.currentScreen}`); const newScreenEl = document.getElementById(`screen-${newScreen}`); const oldIndex = state.screens.indexOf(state.currentScreen); const newIndex = state.screens.indexOf(newScreen); if (newIndex > oldIndex) { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('left'); newScreenEl.classList.remove('right'); newScreenEl.classList.add('center'); } else { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('right'); newScreenEl.classList.remove('left'); newScreenEl.classList.add('center'); } state.currentScreen = newScreen; updateNavButtons(); }
+        function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { /* ... unchanged ... */ }
+        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { vibrate(); const currentActive = scroller.querySelector('.active'); if (currentActive) { currentActive.classList.remove('active'); currentActive.style.color = 'var(--text-secondary)'; } e.currentTarget.classList.add('active'); e.currentTarget.style.color = 'var(--accent)'; renderHomeworkForDate(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
         
         async function renderHomeworkForDate(date) {
             const list = document.getElementById('homework-list');
@@ -266,7 +280,7 @@
                 const snapshot = await scheduleRef.once('value');
                 const scheduleData = snapshot.val();
                 if (!scheduleData) {
-                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up"><img src="noday.png" class="mx-auto w-40 h-40 rounded-lg opacity-70"><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
+                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><img src="noday.png" class="mx-auto w-40 h-40 rounded-lg opacity-70"><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
                     return;
                 }
                 
@@ -301,7 +315,6 @@
                     item.addEventListener('click', (e) => { if (!e.target.classList.contains('checkbox-custom')) openModal(modals.lesson, { ...hw, date: dateString }); });
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
                     
-                    // Swipe gesture
                     let startX, currentX, isSwiping = false, threshold = -80;
                     item.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isSwiping = true; item.style.transition = 'none'; });
                     item.addEventListener('touchmove', (e) => { if (!isSwiping) return; currentX = e.touches[0].clientX; let diff = currentX - startX; if (diff < 0) item.style.transform = `translateX(${diff}px)`; });
