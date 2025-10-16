@@ -20,10 +20,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.7); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
+            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.65); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
         }
         html[data-theme='light'] {
-            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.7); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.65); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -36,8 +36,8 @@
         .themed-transition { transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
         .glass-header, .glass-nav {
             background-color: var(--bg-header); 
-            backdrop-filter: blur(24px); 
-            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(28px); 
+            -webkit-backdrop-filter: blur(28px);
         }
         .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
@@ -86,6 +86,15 @@
         @keyframes typing { 0%, 100% { opacity: 0.4; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
         #ai-chat-main::-webkit-scrollbar { display: none; }
         #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
+        .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
+        .formatted-content p { margin-bottom: 0.75rem; }
+        .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+        .formatted-content ul { list-style-type: disc; }
+        .formatted-content ol { list-style-type: decimal; }
+        .formatted-content pre { background-color: var(--bg-primary); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
+        .formatted-content code { background-color: var(--bg-primary); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
+        .formatted-content pre code { background-color: transparent; padding: 0; }
 
     </style>
 </head>
@@ -104,7 +113,7 @@
             <div id="screen-main" class="screen center flex-col">
                 <div class="screen-content">
                     <header class="glass-header p-4 flex-shrink-0 themed-transition">
-                        <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
+                        <h1 class="text-3xl font-bold tracking-tight">Расписание</h1>
                         <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
                     </header>
                     <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden"></main>
@@ -112,13 +121,13 @@
             </div>
             <div id="screen-ai" class="screen right flex flex-col">
                 <header class="glass-header p-4 flex-shrink-0 themed-transition flex justify-between items-center">
-                    <h1 class="text-4xl font-bold tracking-tight">AI Помощник</h1>
+                    <h1 class="text-3xl font-bold tracking-tight">AI Помощник</h1>
                     <button id="clear-chat-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                 </header>
                 <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
                     <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
                 </main>
-                <footer class="p-4 flex-shrink-0" style="padding-bottom: calc(var(--safe-area-bottom) + 1rem);">
+                <footer class="p-4 flex-shrink-0" style="padding-bottom: calc(var(--safe-area-bottom) + 0.75rem);">
                     <form id="ai-chat-form" class="flex items-center gap-2">
                         <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
                         <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
@@ -128,7 +137,7 @@
             <div id="screen-profile" class="screen right flex-col">
                 <div class="screen-content">
                     <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
-                        <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
+                        <h1 class="text-3xl font-bold tracking-tight">Профиль</h1>
                     </header>
                     <main id="profile-main" class="flex-grow p-4 space-y-6"></main>
                 </div>
@@ -142,6 +151,7 @@
         <div id="modal-overlay" class="modal-overlay fixed inset-0 z-30"></div>
         <div id="modal-lesson" class="modal fixed inset-0 z-40 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
         <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
+        <div id="modal-confirm" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-settings" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-user-profile" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
     </div>
@@ -161,7 +171,7 @@
 
         // --- DOM & STATE ---
         const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile') };
+        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
         let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
         let welcomeLottie = null;
@@ -194,15 +204,16 @@
                 const snapshot = await userRef.once('value');
                 let userData = snapshot.val();
                 
-                const fullName = tgUser.username || (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : ''));
+                const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
+                const username = tgUser.username || `id${tgUser.id}`;
 
                 if (!userData) {
-                    const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: null, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) };
+                    const newUser = { id: tgUser.id, fullName: fullName, username: username, profileIcon: null, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
                     await userRef.set(newUser);
                     startAppSession(newUser);
                 } else {
-                    const updates = { username: tgUser.username, fullName: fullName };
-                    if (ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) && !userData.isAdmin) {
+                    const updates = { username: username, fullName: fullName };
+                    if (ADMIN_TELEGRAM_USERNAMES.includes(username) && !userData.isAdmin) {
                         updates.isAdmin = true;
                     }
                     await userRef.update(updates);
@@ -246,6 +257,10 @@
                 <div class="flex flex-col items-center gap-4 p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
                     <div class="relative">
                         <img id="profile-icon" src="${state.user.profileIcon || `https://placehold.co/80x80/1a1a1a/FFFFFF?text=${state.user.fullName.charAt(0)}`}" class="w-20 h-20 rounded-full object-cover">
+                         <label for="profile-icon-upload" class="absolute bottom-0 right-0 p-1.5 rounded-full cursor-pointer" style="background-color: var(--accent);">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            </label>
+                            <input type="file" id="profile-icon-upload" class="hidden" accept="image/*">
                     </div>
                     <div><h2 id="profile-name" class="text-2xl font-bold text-center">${state.user.fullName}</h2><p id="profile-login" style="color: var(--text-secondary);" class="text-center">@${state.user.username}</p></div>
                 </div>
@@ -273,14 +288,30 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>` : ''}
+                <div class="h-20"></div>
             `;
             document.getElementById('change-name-btn').addEventListener('click', () => openModal(modals.settings));
             document.getElementById('theme-light-btn').addEventListener('click', () => handleThemeChange('light'));
             document.getElementById('theme-dark-btn').addEventListener('click', () => handleThemeChange('dark'));
+            document.getElementById('profile-icon-upload').addEventListener('change', handleProfileIconUpload);
+
             if(state.user.isAdmin) {
                 document.getElementById('admin-fill-hw-profile').addEventListener('click', () => openAdminHwFlow());
             }
             updateThemeButtons();
+        }
+
+        async function handleProfileIconUpload(e) {
+            const file = e.target.files[0]; if (!file) return;
+            showLoader();
+            try {
+                const imageUrl = await uploadToCloudinary(file);
+                await db.ref(`users_tg/${state.user.id}/profileIcon`).set(imageUrl);
+                state.user.profileIcon = imageUrl;
+                document.getElementById('profile-icon').src = imageUrl;
+                showStatus('Аватар обновлен!', false);
+            } catch (error) { console.error('Profile icon upload error:', error); showStatus(`Ошибка загрузки: ${error.message}`, true);
+            } finally { hideLoader(); }
         }
         
         async function handleThemeChange(theme) {
@@ -422,12 +453,14 @@
         }
         
         // --- MODALS ---
-        function setupAdminPanel() { 
-            if(document.getElementById('admin-fill-hw-profile')) {
-                document.getElementById('admin-fill-hw-profile').addEventListener('click', () => { vibrate(); openAdminHwFlow(); });
-            }
+        function openModal(modal, data) {
+             if (!modal) return;
+             modals.overlay.classList.add('active'); 
+             currentOpenModal = modal; 
+             populateModal(modal, data); 
+             modal.classList.add('active'); 
+             TG.BackButton.show(); 
         }
-        function openModal(modal, data) { modals.overlay.classList.add('active'); currentOpenModal = modal; populateModal(modal, data); modal.classList.add('active'); TG.BackButton.show(); }
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
         async function callGemini(prompt, imageParts = []) {
              const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
@@ -463,7 +496,7 @@
                         }
                     }
 
-                    contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
+                    contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-2xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
                         <main class="flex-grow overflow-y-auto space-y-4">
                             <div><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${attachmentsHTML}</div></div>
                              <div class="border-t pt-4" style="border-color: var(--border-color);"><h3 class="font-semibold text-lg mb-2">Комментарии</h3><div id="comments-container" class="space-y-2"></div></div>
@@ -522,6 +555,21 @@
                                 </div>
                             </div>
                         </main>`;
+                    break;
+                case modals.confirm:
+                     modals.confirm.innerHTML = `
+                        <div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;">
+                            <h3 class="text-xl font-bold mb-2">${data.title}</h3>
+                            <p class="mb-6" style="color:var(--text-secondary);">${data.message}</p>
+                            <div class="flex gap-4 mt-6">
+                                <button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button>
+                                <button id="confirm-action-btn" class="bg-red-500 text-white w-full py-3 rounded-lg">Да</button>
+                            </div>
+                        </div>`;
+                    document.getElementById('confirm-action-btn').addEventListener('click', () => {
+                        data.onConfirm();
+                        closeModal();
+                    });
                     break;
             }
             contentWrapper.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
@@ -676,9 +724,22 @@
             form.addEventListener('submit', handleAiFormSubmit);
             document.getElementById('clear-chat-btn').addEventListener('click', () => {
                 vibrate();
-                state.aiChatHistory = [];
-                localStorage.removeItem(`ai_chat_${state.user.id}`);
-                renderAiChat();
+                openModal(modals.confirm, {
+                    title: 'Очистить чат?',
+                    message: 'Вся история переписки с AI будет удалена.',
+                    onConfirm: () => {
+                         const messages = document.querySelectorAll('#ai-chat-messages > div');
+                         messages.forEach((msg, index) => {
+                            msg.classList.add('message-fade-out');
+                            msg.style.animationDelay = `${index * 30}ms`;
+                         });
+                         setTimeout(() => {
+                            state.aiChatHistory = [];
+                            localStorage.removeItem(`ai_chat_${state.user.id}`);
+                            renderAiChat();
+                         }, messages.length * 30 + 300);
+                    }
+                });
             });
             
             const savedHistory = localStorage.getItem(`ai_chat_${state.user.id}`);
@@ -722,9 +783,10 @@
             if (type === 'typing') {
                 innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
             } else {
+                const formattedContent = marked.parse(content, { gfm: true, breaks: true });
                 const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
                 const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
-                innerHTML = `<div class="p-3 rounded-lg themed-transition" style="background-color: ${bgColor}; color: ${textColor};">${content}</div>`;
+                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content" style="background-color: ${bgColor}; color: ${textColor};">${formattedContent}</div>`;
             }
             msgEl.innerHTML = innerHTML;
 
@@ -741,7 +803,8 @@
 
             input.value = '';
             state.aiChatHistory.push({ role: 'user', content: prompt });
-            addMessageToChat('user', prompt);
+            if(state.aiChatHistory.length === 1) renderAiChat(); // Remove templates
+            else addMessageToChat('user', prompt);
             
             // AI Logic
             const typingEl = addMessageToChat('ai', '', 'typing');
