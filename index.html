@@ -46,7 +46,7 @@
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
         .glass-nav { pointer-events: auto; }
         main { padding-bottom: calc(var(--safe-area-bottom) + 90px); }
-        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; cursor: pointer; }
+        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
         .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
         .accent-button:disabled { background-color: var(--text-secondary); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .no-outline:focus { outline: none; box-shadow: none; }
@@ -105,7 +105,6 @@
         .formatted-content code { background-color: var(--bg-primary); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
         .formatted-content pre code { background-color: transparent; padding: 0; }
         .katex-display { overflow-x: auto; overflow-y: hidden; }
-        .modal-close-btn { cursor: pointer; }
 
     </style>
 </head>
@@ -115,7 +114,7 @@
         <!-- Initial Loader -->
         <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center themed-transition" style="background-color: var(--bg-primary);">
             <div class="loader"><div></div><div></div><div></div></div>
-            <p id="initial-loader-text" class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
+            <p class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
         </div>
 
         <!-- Main Content -->
@@ -183,7 +182,7 @@
         // --- DOM & STATE ---
         const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
         const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [], scheduleCache: {} };
+        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
         let nodayLottie = null;
         let aiLottie = null;
@@ -196,7 +195,6 @@
         const fileToPart = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve({ inlineData: { mimeType: file.type, data: reader.result.split(',')[1] } }); reader.onerror = reject; reader.readAsDataURL(file); });
         function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
         const formatDate = (timestamp) => new Date(timestamp).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        const toDateString = (date) => date.toISOString().split('T')[0];
 
         // --- AUTH ---
         async function init() {
@@ -210,7 +208,7 @@
                     dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка: Не удалось получить данные Telegram.<br>Пожалуйста, откройте приложение через Telegram.</p>`;
                     return;
                 }
-                
+
                 const userRef = db.ref('users_tg/' + tgUser.id);
                 const snapshot = await userRef.once('value');
                 let userData = snapshot.val();
@@ -221,14 +219,14 @@
                 if (!userData) {
                     const newUser = { id: tgUser.id, fullName: fullName, username: username, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
                     await userRef.set(newUser);
-                    await startAppSession(newUser);
+                    startAppSession(newUser);
                 } else {
                     const updates = { username: username, fullName: fullName };
                     if (ADMIN_TELEGRAM_USERNAMES.includes(username) && !userData.isAdmin) {
                         updates.isAdmin = true;
                     }
                     await userRef.update(updates);
-                    await startAppSession({ ...userData, ...updates });
+                    startAppSession({ ...userData, ...updates });
                 }
             } catch (error) {
                 console.error("Initialization failed:", error);
@@ -236,16 +234,13 @@
             }
         }
         
-        async function startAppSession(userData) {
+        function startAppSession(userData) {
             state.user = userData;
-            
-            await prefetchScheduleData();
-
             dom.initialLoader.classList.add('opacity-0');
             setTimeout(() => dom.initialLoader.style.display = 'none', 300);
 
             dom.contentWrapper.classList.add('opacity-100');
-            if (state.user.isAdmin && !state.screens.includes('admin')) {
+            if (state.user.isAdmin && state.screens.indexOf('admin') === -1) {
                 state.screens.push('admin');
             }
             renderNav(); 
@@ -253,25 +248,6 @@
             renderHomeworkForDate(state.currentDate); 
             renderProfile();
             setupAiChat();
-        }
-
-        async function prefetchScheduleData() {
-            document.getElementById('initial-loader-text').textContent = 'Загрузка расписания...';
-            const today = new Date();
-            const promises = [];
-            for (let i = -10; i <= 10; i++) {
-                const date = new Date();
-                date.setDate(today.getDate() + i);
-                const dateString = toDateString(date);
-                promises.push(db.ref('schedule/' + dateString).once('value'));
-            }
-            const snapshots = await Promise.all(promises);
-            snapshots.forEach((snapshot, index) => {
-                 const date = new Date();
-                 date.setDate(today.getDate() + index - 10);
-                 const dateString = toDateString(date);
-                 state.scheduleCache[dateString] = snapshot.val();
-            });
         }
 
         async function uploadToCloudinary(file) {
@@ -395,7 +371,7 @@
         function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = toDateString(date); dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
+        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
         
         function handleDateChange(newDate) {
             vibrate();
@@ -403,7 +379,7 @@
             const oldActive = scroller.querySelector('.active');
             if (oldActive) { oldActive.classList.remove('active'); oldActive.style.color = 'var(--text-secondary)'; }
             
-            const newActive = scroller.querySelector(`[data-date="${toDateString(newDate)}"]`);
+            const newActive = scroller.querySelector(`[data-date="${newDate.toISOString().split('T')[0]}"]`);
             if (newActive) { newActive.classList.add('active'); newActive.style.color = 'var(--accent)'; }
 
             const list = document.getElementById('homework-list');
@@ -417,53 +393,58 @@
             state.currentDate = newDate;
         }
 
-        function renderHomeworkForDate(date, direction = 'left') {
+        async function renderHomeworkForDate(date, direction = 'left') {
             const list = document.getElementById('homework-list');
             list.className = 'flex-grow p-4 relative'; // Reset classes
-            const dateString = toDateString(date);
+            list.innerHTML = `<div class="absolute inset-0 flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
+            const dateString = date.toISOString().split('T')[0];
             
-            const scheduleData = state.scheduleCache[dateString];
+            try {
+                const snapshot = await db.ref('schedule/' + dateString).once('value');
+                const scheduleData = snapshot.val();
                 
-            if (!scheduleData) {
-                list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
-                if (nodayLottie) nodayLottie.destroy();
-                nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
-                return;
-            }
-            
-            const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
-            const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
-            
-            list.innerHTML = '';
-            schedule.forEach((hw, index) => {
-                const isCompleted = completedHomeworks[hw.id] || false;
-                const item = document.createElement('div');
-                item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
-                item.style.backgroundColor = 'var(--bg-secondary)';
-                item.style.animationDelay = `${index * 70}ms`;
+                list.className = 'flex-grow p-4 relative';
                 
-                item.innerHTML = `
-                    <div class="flex-grow">
-                        <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
-                        <p class="font-bold text-lg">${hw.subject}</p>
-                    </div>
-                    <div class="text-right flex-shrink-0 flex flex-col items-center gap-2">
-                         <div class="h-6 w-6 ml-auto">
-                            ${hw.homework_text ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 relative" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : ''}
-                         </div>
-                       <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom" ${isCompleted ? 'checked' : ''}>
-                    </div>`;
+                if (!scheduleData) {
+                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
+                    if (nodayLottie) nodayLottie.destroy();
+                    nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
+                    return;
+                }
+                
+                const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
+                const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
+                
+                list.innerHTML = '';
+                schedule.forEach((hw, index) => {
+                    const isCompleted = completedHomeworks[hw.id] || false;
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
+                    item.style.backgroundColor = 'var(--bg-secondary)';
+                    item.style.animationDelay = `${index * 70}ms`;
+                    
+                    item.innerHTML = `
+                        <div class="flex-grow">
+                            <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
+                            <p class="font-bold text-lg">${hw.subject}</p>
+                        </div>
+                        <div class="text-right flex-shrink-0 flex flex-col items-center gap-2">
+                             <div class="h-6 w-6 ml-auto">
+                                ${hw.homework_text ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 relative" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : ''}
+                             </div>
+                           <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom" ${isCompleted ? 'checked' : ''}>
+                        </div>`;
 
-                item.addEventListener('click', (e) => { 
-                    if (!e.target.classList.contains('checkbox-custom')) {
-                        openModal(modals.lesson, { ...hw, date: dateString }); 
-                    }
+                    item.addEventListener('click', (e) => { if (!e.target.classList.contains('checkbox-custom')) openModal(modals.lesson, { ...hw, date: dateString }); });
+                    item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
+                    
+                    list.appendChild(item);
                 });
-                item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
-                
-                list.appendChild(item);
-            });
-            list.innerHTML += `<div class="h-20"></div>`; // Spacer for nav island
+                list.innerHTML += `<div class="h-20"></div>`; // Spacer for nav island
+            } catch (error) {
+                console.error("Error fetching schedule:", error);
+                list.innerHTML = `<p class="text-red-500 text-center mt-10">Не удалось загрузить расписание.</p>`;
+            }
         }
         function handleCheckboxChange(e) { 
             vibrate(); 
@@ -481,25 +462,21 @@
         }
         
         // --- MODALS ---
-        async function openModal(modal, data) {
+        function openModal(modal, data) {
              if (!modal) return;
              modals.overlay.classList.add('active'); 
              currentOpenModal = modal; 
-             await populateModal(modal, data); // AWAIT here is the key fix
+             populateModal(modal, data); 
              modal.classList.add('active'); 
              TG.BackButton.show(); 
         }
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
-        
         async function callGemini(prompt, imageParts = []) {
-            const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // Replace with your key
-            const model = imageParts.length > 0 ? "gemini-pro-vision" : "gemini-1.5-flash-latest"; // FIX: Use correct text model
-            
-            const finalApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
+             const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
             try {
-                const response = await fetch(finalApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -507,20 +484,6 @@
                 return text;
             } catch (error) { console.error("Fetch/Gemini Error:", error); throw error; }
         }
-
-        function formatAiSolution(text) {
-            const formattedHtml = marked.parse(text, { gfm: true, breaks: true });
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = formattedHtml;
-            // KaTeX rendering
-            tempDiv.innerHTML = tempDiv.innerHTML.replace(/\$\$(.*?)\$\$/g, (match, equation) => {
-                try { return katex.renderToString(equation.trim(), { displayMode: true, throwOnError: false }); } catch (e) { return match; }
-            }).replace(/\$(.*?)\$/g, (match, equation) => {
-                try { return katex.renderToString(equation.trim(), { throwOnError: false }); } catch (e) { return match; }
-            });
-            return tempDiv.innerHTML;
-        }
-
 
         async function populateModal(modal, data) {
             modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col themed-transition"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full themed-transition" style="background-color: var(--border-color);"></div></div></div>`;
@@ -549,20 +512,40 @@
                         </main>
                         <footer class="flex-shrink-0 pt-4"><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
                     
+                    const commentsContainer = document.getElementById('comments-container');
+                    const commentsSnapshot = await db.ref(`comments/${data.id}`).once('value');
+                    const commentsData = commentsSnapshot.val();
+                    if(commentsData) {
+                        Object.values(commentsData).reverse().forEach((comment, index) => {
+                           const commentEl = document.createElement('div');
+                            commentEl.className = 'p-3 rounded-lg mb-2 flex gap-3 items-start opacity-0 scale-in-up';
+                            commentEl.style.backgroundColor = 'var(--bg-tertiary)';
+                            commentEl.style.animationDelay = `${index * 70}ms`;
+                            commentEl.innerHTML = `
+                                <img src="${comment.authorIcon || `https://placehold.co/40x40/1a1a1a/FFFFFF?text=${comment.authorName.charAt(0)}`}" class="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer" data-user-id="${comment.authorId}">
+                                <div>
+                                    <div class="flex items-baseline gap-2">
+                                        <p class="font-bold text-sm cursor-pointer" data-user-id="${comment.authorId}">${comment.authorName}</p>
+                                        <p class="text-xs" style="color: var(--text-secondary);">${formatDate(comment.timestamp)}</p>
+                                    </div>
+                                    <p class="text-white/90">${comment.text}</p>
+                                </div>
+                            `;
+                            commentsContainer.append(commentEl);
+                        });
+                    }
+
                     document.getElementById('comment-form').addEventListener('submit', async (e) => { 
                         e.preventDefault(); 
                         const input = document.getElementById('comment-input'); 
                         const text = input.value.trim(); 
                         if (text) { 
                             const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; 
-                            await db.ref(`comments/${data.date}/${data.id}`).push().set(newComment); 
+                            await db.ref(`comments/${data.id}`).push().set(newComment); 
                             input.value = ''; 
                             showStatus("Комментарий отправлен!", false);
                         } 
                     });
-                    
-                    // Load comments AFTER main content is rendered
-                    loadAndRenderComments(data);
                     break;
                 case modals.settings:
                     modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
@@ -599,56 +582,15 @@
                     break;
             }
             contentWrapper.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
-        }
-
-        function loadAndRenderComments(data) {
-             const commentsContainer = document.getElementById('comments-container');
-             if (!commentsContainer) return;
-             
-             commentsContainer.innerHTML = `<div class="flex justify-center"><div class="loader"><div></div><div></div><div></div></div></div>`;
-
-             try {
-                const commentsRef = db.ref(`comments/${data.date}/${data.id}`);
-                // Use .on() to listen for realtime updates
-                commentsRef.on('value', (snapshot) => {
-                    const commentsData = snapshot.val();
-                    commentsContainer.innerHTML = '';
-                    if(commentsData) {
-                        Object.values(commentsData).reverse().forEach((comment, index) => {
-                           const commentEl = document.createElement('div');
-                            commentEl.className = 'p-3 rounded-lg mb-2 flex gap-3 items-start opacity-0 scale-in-up';
-                            commentEl.style.backgroundColor = 'var(--bg-tertiary)';
-                            commentEl.style.animationDelay = `${index * 70}ms`;
-                            commentEl.innerHTML = `
-                                <img src="${comment.authorIcon || `https://placehold.co/40x40/1a1a1a/FFFFFF?text=${comment.authorName.charAt(0)}`}" class="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer" data-user-id="${comment.authorId}">
-                                <div>
-                                    <div class="flex items-baseline gap-2">
-                                        <p class="font-bold text-sm cursor-pointer" data-user-id="${comment.authorId}">${comment.authorName}</p>
-                                        <p class="text-xs" style="color: var(--text-secondary);">${formatDate(comment.timestamp)}</p>
-                                    </div>
-                                    <p class="text-white/90">${comment.text}</p>
-                                </div>
-                            `;
-                            commentsContainer.append(commentEl);
-                        });
-                        commentsContainer.querySelectorAll('[data-user-id]').forEach(el => el.addEventListener('click', async (e) => {
-                            vibrate();
-                            const userId = e.currentTarget.dataset.userId;
-                            const userSnapshot = await db.ref(`users_tg/${userId}`).once('value');
-                            const userData = userSnapshot.val();
-                            if(userData) {
-                                closeModal();
-                                setTimeout(() => openModal(modals.userProfile, userData), 300);
-                            }
-                        }));
-                    } else {
-                        commentsContainer.innerHTML = `<p class="text-center text-sm" style="color:var(--text-secondary);">Комментариев пока нет.</p>`;
-                    }
-                });
-             } catch (error) {
-                console.error("Error loading comments:", error);
-                commentsContainer.innerHTML = `<p class="text-center text-sm text-red-500">Не удалось загрузить комментарии.</p>`;
-             }
+            contentWrapper.querySelectorAll('[data-user-id]').forEach(el => el.addEventListener('click', async (e) => {
+                const userId = e.currentTarget.dataset.userId;
+                const userSnapshot = await db.ref(`users_tg/${userId}`).once('value');
+                const userData = userSnapshot.val();
+                if(userData) {
+                    closeModal();
+                    setTimeout(() => openModal(modals.userProfile, userData), 300);
+                }
+            }));
         }
         
         // --- ADMIN FLOW ---
@@ -780,8 +722,6 @@
                 await scheduleRef.set({}); // Clear the day first using set({})
                 for (const lesson of lessons) { await scheduleRef.push().set(lesson); }
                 showStatus('Расписание успешно опубликовано!', false);
-                // Update cache and re-render
-                state.scheduleCache[date] = lessons.reduce((acc, lesson, i) => ({...acc, [`key${i}`]: lesson}), {});
                 renderHomeworkForDate(new Date(date));
             } catch (err) { showStatus(`Ошибка публикации: ${err.message}`, true);
             } finally { hideLoader(); closeModal(); }
@@ -856,7 +796,7 @@
             if (type === 'typing') {
                 innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
             } else {
-                const formattedContent = formatAiSolution(content);
+                const formattedContent = marked.parse(content, { gfm: true, breaks: true });
                 const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
                 const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
                 innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content" style="background-color: ${bgColor}; color: ${textColor};">${formattedContent}</div>`;
@@ -879,15 +819,15 @@
             if(state.aiChatHistory.length === 1) renderAiChat(); // Remove templates
             else addMessageToChat('user', prompt);
             
+            // AI Logic
             const typingEl = addMessageToChat('ai', '', 'typing');
             
+            // TODO: Implement advanced logic to check for homework requests
             let finalResponse = '';
             try {
-                const context = processAiPromptForHomework(prompt);
-                const finalPrompt = context ? `${context}\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ: "${prompt}"` : prompt;
-                finalResponse = await callGemini(finalPrompt);
+                finalResponse = await callGemini(prompt);
             } catch(e) {
-                finalResponse = "Произошла ошибка при обращении к AI: " + e.message;
+                finalResponse = "Произошла ошибка при обращении к AI.";
             }
 
             typingEl.remove();
@@ -897,40 +837,11 @@
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
         }
 
-        function processAiPromptForHomework(prompt) {
-            const lowerPrompt = prompt.toLowerCase();
-            let targetDate = null;
-            
-            if (lowerPrompt.includes('завтра')) {
-                targetDate = new Date();
-                targetDate.setDate(targetDate.getDate() + 1);
-            } else if (lowerPrompt.includes('сегодня')) {
-                targetDate = new Date();
-            } else if (lowerPrompt.includes('вчера')) {
-                targetDate = new Date();
-                targetDate.setDate(targetDate.getDate() - 1);
-            }
-            // Add more date parsing logic here (e.g., "17 октября")
-            
-            if (targetDate) {
-                const dateString = toDateString(targetDate);
-                const schedule = state.scheduleCache[dateString];
-                if (schedule) {
-                    let context = `СИСТЕМНОЕ СООБЩЕНИЕ: Ты — AI-помощник для электронного дневника. Пользователь спрашивает о домашнем задании. Вот данные на запрашиваемый день (${dateString}):\n\n`;
-                    context += JSON.stringify(Object.values(schedule)) + "\n\n";
-                    context += "Используй эти данные, чтобы ответить на вопрос пользователя. Если найдешь дз, предложи помочь его решить. Отвечай кратко и по делу.";
-                    return context;
-                } else {
-                     return `СИСТЕМНОЕ СООБЩЕНИЕ: Пользователь спросил про дз на ${dateString}, но на этот день нет данных в расписании. Сообщи ему об этом.`;
-                }
-            }
-            return null; // No context found
-        }
-
 
         TG.BackButton.onClick(closeModal);
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
+
 
