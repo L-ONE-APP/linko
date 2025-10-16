@@ -43,7 +43,7 @@
         }
         .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
-        .glass-nav { border: 1px solid var(--border-color); pointer-events: auto; }
+        .glass-nav { pointer-events: auto; }
         main { padding-bottom: calc(var(--safe-area-bottom) + 90px); }
         .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
         .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
@@ -61,21 +61,16 @@
 
         .slide-out-left { animation: slideOutLeft 0.3s forwards ease-out; }
         .slide-out-right { animation: slideOutRight 0.3s forwards ease-out; }
-        .slide-in-from-left { animation: slideInFromLeft 0.3s forwards ease-out; }
-        .slide-in-from-right { animation: slideInFromRight 0.3s forwards ease-out; }
         @keyframes slideOutLeft { to { transform: translateX(-100%); opacity: 0; } }
         @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
-        @keyframes slideInFromLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideInFromRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-
+        
         .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: transparent; width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
         .checkbox-custom:checked { background-color: var(--accent); border-color: var(--accent); }
         .checkbox-custom:checked::after { content: ''; position: absolute; left: 0.45rem; top: 0.15rem; width: 0.4rem; height: 0.8rem; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
         .date-scroller-btn { position: relative; transition: color 0.3s ease; }
         .date-scroller-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; animation: underlineGrow 0.3s ease; }
         @keyframes underlineGrow { from { width: 0; left: 50%; } to { width: 50%; left: 25%; } }
-        .screen { position: absolute; top: 0; left: 0; right: 0; height: 100%; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); overflow-y: auto; }
         .screen.left { transform: translateX(-100%); }
         .screen.right { transform: translateX(100%); }
         .screen.center { transform: translateX(0); }
@@ -87,6 +82,17 @@
         #loader-container { position: fixed; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
         .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
         .file-input-label:hover { background-color: var(--accent); color: white; }
+        
+        /* AI Chat Styles */
+        #ai-chat-messages { scroll-behavior: smooth; }
+        .ai-message, .user-message { max-width: 80%; }
+        .typing-indicator span { height: 8px; width: 8px; margin: 0 2px; background-color: var(--text-secondary); display: inline-block; border-radius: 50%; opacity: 0.4; animation: typing 1s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.1s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.2s; }
+        @keyframes typing { 0%, 100% { opacity: 0.4; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+        #ai-chat-main::-webkit-scrollbar { display: none; }
+        #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
+
     </style>
 </head>
 <body class="overflow-hidden">
@@ -101,24 +107,37 @@
         <!-- Main Content -->
         <div id="content-wrapper" class="opacity-0 transition-opacity duration-500 w-full h-full">
             <div id="loader-container" class="opacity-0 pointer-events-none"><div class="loader"><div></div><div></div><div></div></div></div>
-            <div id="screen-main" class="screen center flex flex-col overflow-y-auto">
+            <div id="screen-main" class="screen center flex-col">
                 <header class="glass-header p-4 flex-shrink-0 themed-transition">
                     <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
                     <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
                 </header>
-                <main id="homework-list" class="flex-grow p-4 relative overflow-hidden"></main>
+                <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden overflow-y-auto"></main>
             </div>
-            <div id="screen-profile" class="screen right flex-col overflow-y-auto">
+            <div id="screen-ai" class="screen right flex flex-col">
+                <header class="glass-header p-4 flex-shrink-0 themed-transition flex justify-between items-center">
+                    <h1 class="text-4xl font-bold tracking-tight">AI Помощник</h1>
+                    <button id="clear-chat-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                </header>
+                <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
+                    <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
+                </main>
+                <footer class="p-4 flex-shrink-0">
+                    <form id="ai-chat-form" class="flex items-center gap-2">
+                        <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
+                        <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
+                    </form>
+                </footer>
+            </div>
+            <div id="screen-profile" class="screen right flex-col">
                  <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
                     <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
                  </header>
-                <main id="profile-main" class="flex-grow p-4 space-y-6">
-                    <!-- Profile content will be injected here -->
-                </main>
+                <main id="profile-main" class="flex-grow p-4 space-y-6 overflow-y-auto"></main>
             </div>
-            <div id="screen-admin" class="screen right flex-col overflow-y-auto">
+            <div id="screen-admin" class="screen right flex-col">
                 <header class="glass-header p-4 flex-shrink-0 themed-transition"><h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1></header>
-                <main class="flex-grow p-4 space-y-6">
+                <main class="flex-grow p-4 space-y-6 overflow-y-auto">
                     <button id="admin-fill-hw" class="w-full p-6 rounded-2xl text-left flex items-center justify-between themed-transition" style="background-color: var(--bg-secondary);">
                         <div><h2 class="text-xl font-bold">Заполнить ДЗ</h2><p class="text-sm" style="color: var(--text-secondary);">Автоматически с помощью AI</p></div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
@@ -134,7 +153,6 @@
         <div id="modal-overlay" class="modal-overlay fixed inset-0 z-30"></div>
         <div id="modal-lesson" class="modal fixed inset-0 z-40 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
         <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
-        <div id="modal-onboarding" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-settings" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-user-profile" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
     </div>
@@ -154,8 +172,8 @@
 
         // --- DOM & STATE ---
         const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), onboarding: document.getElementById('modal-onboarding'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'profile'], adminFlowData: {}, currentDate: new Date() };
+        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile') };
+        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
         let lottieAnimation = null;
 
@@ -218,6 +236,7 @@
             setupDateScroller(); 
             renderHomeworkForDate(state.currentDate); 
             renderProfile();
+            setupAiChat();
             if(state.user.isAdmin) setupAdminPanel();
         }
 
@@ -269,8 +288,11 @@
         
         // --- NAVIGATION & UI ---
         function renderNav() {
-            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
-            if (state.user?.isAdmin) { navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; }
+            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="ai" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">AI</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
+            if (state.user?.isAdmin) {
+                navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; 
+                state.screens = ['main', 'ai', 'profile', 'admin'];
+            }
             dom.nav.innerHTML = navHTML;
             document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
             updateNavButtons();
@@ -311,7 +333,6 @@
                 const snapshot = await db.ref('schedule/' + dateString).once('value');
                 const scheduleData = snapshot.val();
                 
-                // Clear old animation classes before adding new ones
                 list.className = 'flex-grow p-4 relative';
                 
                 if (!scheduleData) {
@@ -322,14 +343,13 @@
                 }
                 
                 const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
-                
                 const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
                 
                 list.innerHTML = '';
                 schedule.forEach((hw, index) => {
                     const isCompleted = completedHomeworks[hw.id] || false;
                     const item = document.createElement('div');
-                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up'; 
+                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
                     item.style.backgroundColor = 'var(--bg-secondary)';
                     item.style.animationDelay = `${index * 70}ms`;
                     
@@ -337,7 +357,6 @@
                         <div class="flex-grow">
                             <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
                             <p class="font-bold text-lg">${hw.subject}</p>
-                            <p class="text-sm" style="color: var(--text-secondary);">${hw.teacher || ''}</p>
                         </div>
                         <div class="text-right flex-shrink-0 flex flex-col items-center gap-2">
                              <div class="h-6 w-6 ml-auto">
@@ -351,6 +370,7 @@
                     
                     list.appendChild(item);
                 });
+                list.innerHTML += `<div class="h-20"></div>`; // Spacer for nav island
             } catch (error) {
                 console.error("Error fetching schedule:", error);
                 list.innerHTML = `<p class="text-red-500 text-center mt-10">Не удалось загрузить расписание.</p>`;
@@ -395,21 +415,32 @@
 
             switch(modal) {
                 case modals.lesson:
-                    const hwFiles = (data.attachments || []).map(fileUrl => `<a href="${fileUrl}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition" style="background-color: var(--bg-primary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg><span class="truncate">Прикрепленный файл</span></a>`).join('');
+                    let attachmentsHTML = '';
+                    if (data.attachments && data.attachments.length > 0) {
+                        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                        const images = data.attachments.filter(url => imageExtensions.some(ext => url.toLowerCase().includes(ext)));
+                        const files = data.attachments.filter(url => !images.includes(url));
+
+                        if(images.length > 0) {
+                            attachmentsHTML += `<details class="themed-transition rounded-lg" style="background-color: var(--bg-secondary);"><summary class="p-3 cursor-pointer font-semibold">Показать ${images.length} изображений</summary><div class="p-3 border-t" style="border-color: var(--border-color);">${images.map(url => `<img src="${url}" class="w-full rounded-lg mb-2">`).join('')}</div></details>`;
+                        }
+                        if(files.length > 0) {
+                            attachmentsHTML += files.map(url => `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2" style="background-color: var(--bg-secondary); color: var(--text-primary);">...<span class="truncate">Прикрепленный файл</span></a>`).join('');
+                        }
+                    }
+
                     contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-3xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
                         <main class="flex-grow overflow-y-auto space-y-4">
-                            <div><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${hwFiles}</div></div>
+                            <div><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${attachmentsHTML}</div></div>
                              <div class="border-t pt-4" style="border-color: var(--border-color);"><h3 class="font-semibold text-lg mb-2">Комментарии</h3><div id="comments-container" class="space-y-2"></div></div>
                         </main>
-                        <footer class="flex-shrink-0 pt-4 flex flex-col gap-4"><button id="btn-ai-solve" class="accent-button w-full py-3 font-semibold rounded-xl no-outline">Решить с AI</button><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
-                    
-                    document.getElementById('btn-ai-solve').addEventListener('click', () => { /* AI Logic Here */ });
+                        <footer class="flex-shrink-0 pt-4"><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
                     
                     const commentsContainer = document.getElementById('comments-container');
                     const commentsSnapshot = await db.ref(`comments/${data.id}`).once('value');
                     const commentsData = commentsSnapshot.val();
                     if(commentsData) {
-                        Object.values(commentsData).forEach((comment, index) => {
+                        Object.values(commentsData).reverse().forEach((comment, index) => {
                            const commentEl = document.createElement('div');
                             commentEl.className = 'p-3 rounded-lg mb-2 flex gap-3 items-start opacity-0 scale-in-up';
                             commentEl.style.backgroundColor = 'var(--bg-tertiary)';
@@ -424,14 +455,22 @@
                                     <p class="text-white/90">${comment.text}</p>
                                 </div>
                             `;
-                            commentsContainer.prepend(commentEl);
+                            commentsContainer.append(commentEl);
                         });
                     }
 
-                    document.getElementById('comment-form').addEventListener('submit', async (e) => { e.preventDefault(); const input = document.getElementById('comment-input'); const text = input.value.trim(); if (text) { const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; await db.ref(`comments/${data.id}`).push().set(newComment); input.value = ''; /* Re-render or append new comment with animation */ } });
-                    break;
-                case modals.onboarding:
-                    // This case is removed as onboarding is now seamless
+                    document.getElementById('comment-form').addEventListener('submit', async (e) => { 
+                        e.preventDefault(); 
+                        const input = document.getElementById('comment-input'); 
+                        const text = input.value.trim(); 
+                        if (text) { 
+                            const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; 
+                            await db.ref(`comments/${data.id}`).push().set(newComment); 
+                            input.value = ''; 
+                            // Re-render comments would be better, but for now just clear and show status
+                            showStatus("Комментарий отправлен!", false);
+                        } 
+                    });
                     break;
                 case modals.settings:
                     modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
@@ -458,8 +497,8 @@
                 const userSnapshot = await db.ref(`users_tg/${userId}`).once('value');
                 const userData = userSnapshot.val();
                 if(userData) {
-                    closeModal(); // Close current modal before opening new one
-                    openModal(modals.userProfile, userData);
+                    closeModal();
+                    setTimeout(() => openModal(modals.userProfile, userData), 300);
                 }
             }));
         }
@@ -469,7 +508,7 @@
 
         function renderAdminHwStep(step) {
             const modal = modals.admin;
-            let content = `<div class="p-4 pt-0 h-full flex flex-col"><div class="relative py-2"><div class="absolute top-4 left-0 h-1 rounded-full themed-transition" style="background-color: var(--bg-tertiary); width: 100%;"></div><div id="admin-progress-bar" class="absolute top-4 left-0 h-1 rounded-full transition-all duration-500" style="background-color: var(--accent); width: ${step * 33.3}%;"></div></div></div>`;
+            let content = `<div class="p-4 pt-0 h-full flex flex-col"><div class="relative py-2"><div class="absolute top-4 left-0 h-1 rounded-full themed-transition" style="background-color: var(--bg-tertiary); width: 100%;"></div><div id="admin-progress-bar" class="absolute top-4 left-0 h-1 rounded-full transition-all duration-500" style="background-color: var(--accent); width: ${step * 25}%;"></div></div></div>`;
             const wrapper = document.createElement('div');
             wrapper.innerHTML = content;
             const contentWrapper = wrapper.firstChild;
@@ -479,8 +518,8 @@
             
             let stepContent = '';
             switch(step) {
-                case 1:
-                    stepContent = `${header('Шаг 1/3: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg themed-transition" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
+                case 1: // Date and Photo selection
+                    stepContent = `${header('Шаг 1/4: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg themed-transition" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
                     
@@ -492,20 +531,36 @@
                     fileInput.addEventListener('change', (e) => { state.adminFlowData.hwFiles = e.target.files; document.getElementById('admin-hw-files-preview').textContent = `${e.target.files.length} фото выбрано.`; checkReady(); });
                     nextBtn.addEventListener('click', () => { vibrate(); renderAdminHwStep(2); processAllPhotos(); });
                     break;
-
-                case 2:
-                    stepContent = `${header('Шаг 2/3: Проверка')}<main id="admin-hw-s2-main" class="flex-grow flex flex-col justify-center items-center text-center"><div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует фото...</p></main>${footer('admin-hw-s2-next', 'Далее', 'admin-hw-s2-back', 'Назад')}`;
+                case 2: // AI Processing
+                    stepContent = `${header('Шаг 2/4: Анализ')}<main id="admin-hw-s2-main" class="flex-grow flex flex-col justify-center items-center text-center"><div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует фото...</p></main>${footer('admin-hw-s2-next', 'Далее', 'admin-hw-s2-back', 'Назад')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
                     document.getElementById('admin-hw-s2-back').addEventListener('click', () => renderAdminHwStep(1));
                     break;
-                case 3:
-                    stepContent = `${header('Шаг 3/3: Публикация')}<main id="admin-hw-s3-main" class="flex-grow overflow-y-auto"><p class="mb-4">Проверьте результат и прикрепите файлы к урокам, если нужно.</p></main>${footer('admin-hw-publish', 'Опубликовать', 'admin-hw-s3-back', 'Назад')}`;
+                case 3: // AI Response Debug
+                    stepContent = `${header('Шаг 3/4: Отладка AI')}<main id="admin-hw-s3-main" class="flex-grow overflow-y-auto"><p class="mb-4">Это "сырой" JSON от AI. Проверьте его перед продолжением.</p><textarea id="ai-json-debug" class="w-full h-full p-2 rounded font-mono text-sm themed-transition" style="background-color: var(--bg-tertiary);"></textarea></main>${footer('admin-hw-s3-next', 'Подтвердить', 'admin-hw-s3-back', 'Назад')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
+                    const debugArea = document.getElementById('ai-json-debug');
+                    debugArea.value = state.adminFlowData.rawJson;
+                    document.getElementById('admin-hw-s3-next').disabled = false;
                     document.getElementById('admin-hw-s3-back').addEventListener('click', () => renderAdminHwStep(2));
+                    document.getElementById('admin-hw-s3-next').addEventListener('click', () => { 
+                        try {
+                            state.adminFlowData.lessons = JSON.parse(debugArea.value);
+                            renderAdminHwStep(4);
+                        } catch(e) {
+                            alert("Ошибка в JSON! Пожалуйста, исправьте перед продолжением.");
+                        }
+                    });
+                    break;
+                case 4: // Final Review and Publish
+                    stepContent = `${header('Шаг 4/4: Публикация')}<main id="admin-hw-s4-main" class="flex-grow overflow-y-auto"><p class="mb-4">Проверьте результат и прикрепите файлы к урокам, если нужно.</p></main>${footer('admin-hw-publish', 'Опубликовать', 'admin-hw-s4-back', 'Назад')}`;
+                    contentWrapper.innerHTML += stepContent;
+                    modal.innerHTML = wrapper.innerHTML;
+                    document.getElementById('admin-hw-s4-back').addEventListener('click', () => renderAdminHwStep(3));
                     document.getElementById('admin-hw-publish').addEventListener('click', publishAdminHomework);
-                    const mainEl = document.getElementById('admin-hw-s3-main');
+                    const mainEl = document.getElementById('admin-hw-s4-main');
                     if(state.adminFlowData.lessons) {
                         state.adminFlowData.lessons.forEach((lesson, index) => {
                             const uniqueId = `file-${state.adminFlowData.date}-${index}`;
@@ -556,7 +611,7 @@
                 Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15', 'teacher': 'Иванова И.И.', 'homework_text': '№123, №124'}]`;
                 
                 const resultText = await callGemini(prompt, imageParts);
-                state.adminFlowData.lessons = JSON.parse(resultText.replace(/```json/g, '').replace(/```/g, ''));
+                state.adminFlowData.rawJson = resultText.replace(/```json/g, '').replace(/```/g, '');
                 renderAdminHwStep(3);
             } catch (e) { alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`); renderAdminHwStep(1); }
         }
@@ -574,13 +629,105 @@
                 const date = state.adminFlowData.date;
                 const lessons = state.adminFlowData.lessons;
                 const scheduleRef = db.ref('schedule/' + date);
-                await scheduleRef.remove();
+                await scheduleRef.set({}); // Clear the day first using set({})
                 for (const lesson of lessons) { await scheduleRef.push().set(lesson); }
                 showStatus('Расписание успешно опубликовано!', false);
                 renderHomeworkForDate(new Date(date));
             } catch (err) { showStatus(`Ошибка публикации: ${err.message}`, true);
             } finally { hideLoader(); closeModal(); }
         }
+
+        // --- AI CHAT ---
+        function setupAiChat() {
+            const form = document.getElementById('ai-chat-form');
+            form.addEventListener('submit', handleAiFormSubmit);
+            document.getElementById('clear-chat-btn').addEventListener('click', () => {
+                vibrate();
+                state.aiChatHistory = [];
+                localStorage.removeItem(`ai_chat_${state.user.id}`);
+                renderAiChat();
+            });
+            
+            const savedHistory = localStorage.getItem(`ai_chat_${state.user.id}`);
+            if(savedHistory) {
+                state.aiChatHistory = JSON.parse(savedHistory);
+            }
+            renderAiChat();
+        }
+
+        function renderAiChat() {
+            const messagesContainer = document.getElementById('ai-chat-messages');
+            messagesContainer.innerHTML = '';
+            if (state.aiChatHistory.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center">
+                        <div class="space-y-2">
+                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Помоги сделать дз по геометрии на завтра</button>
+                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Что такое квадрат?</button>
+                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Реши дз по алгебре на 17 октября</button>
+                        </div>
+                    </div>`;
+                document.querySelectorAll('.ai-template-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const input = document.getElementById('ai-chat-input');
+                        input.value = e.target.textContent;
+                        handleAiFormSubmit(new Event('submit'));
+                    });
+                });
+            } else {
+                state.aiChatHistory.forEach(msg => addMessageToChat(msg.role, msg.content));
+            }
+        }
+
+        function addMessageToChat(role, content, type = 'text') {
+            const messagesContainer = document.getElementById('ai-chat-messages');
+            const msgEl = document.createElement('div');
+            msgEl.className = `flex mb-4 scale-in-up ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            msgEl.style.opacity = '0';
+            
+            let innerHTML = '';
+            if (type === 'typing') {
+                innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+            } else {
+                const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
+                const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
+                innerHTML = `<div class="p-3 rounded-lg themed-transition" style="background-color: ${bgColor}; color: ${textColor};">${content}</div>`;
+            }
+            msgEl.innerHTML = innerHTML;
+
+            messagesContainer.appendChild(msgEl);
+            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+            return msgEl;
+        }
+
+        async function handleAiFormSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('ai-chat-input');
+            const prompt = input.value.trim();
+            if(!prompt) return;
+
+            input.value = '';
+            state.aiChatHistory.push({ role: 'user', content: prompt });
+            addMessageToChat('user', prompt);
+            
+            // AI Logic
+            const typingEl = addMessageToChat('ai', '', 'typing');
+            
+            // TODO: Implement advanced logic to check for homework requests
+            let finalResponse = '';
+            try {
+                finalResponse = await callGemini(prompt);
+            } catch(e) {
+                finalResponse = "Произошла ошибка при обращении к AI.";
+            }
+
+            typingEl.remove();
+            state.aiChatHistory.push({ role: 'ai', content: finalResponse });
+            addMessageToChat('ai', finalResponse);
+
+            localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
+        }
+
 
         TG.BackButton.onClick(closeModal);
         document.addEventListener('DOMContentLoaded', init);
