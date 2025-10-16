@@ -131,9 +131,8 @@
                 </header>
                 <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
                     <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
-                    <div class="h-20"></div> <!-- Spacer for footer -->
                 </main>
-                <footer class="absolute bottom-0 left-0 right-0 p-4 flex-shrink-0 bg-transparent" style="padding-bottom: calc(var(--safe-area-bottom) + 0.75rem);">
+                <footer class="p-4 flex-shrink-0" style="margin-bottom: 70px;">
                     <form id="ai-chat-form" class="flex items-center gap-2">
                         <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
                         <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
@@ -209,7 +208,7 @@
                 const snapshot = await userRef.once('value');
                 let userData = snapshot.val();
                 
-                const fullName = (tgUser.first_name || '') + (tgUser.last_name ? ' ' + tgUser.last_name : '') || tgUser.username;
+                const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
                 const username = tgUser.username || `id${tgUser.id}`;
                 const profileIcon = tgUser.photo_url || null;
 
@@ -323,7 +322,7 @@
         async function handleThemeChange(theme) {
             if (theme !== (document.documentElement.getAttribute('data-theme') || 'dark')) {
                 setTheme(theme);
-                // No need to save to DB if we sync with TG theme on launch
+                await db.ref(`users_tg/${state.user.id}/theme`).set(theme);
                 updateThemeButtons();
             }
         }
