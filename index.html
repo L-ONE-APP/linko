@@ -14,6 +14,9 @@
 
     <!-- AI Solution Formatting -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhs+itH6blOKdeIFcEVR0JFeSdGZPNzDUxVRuDdiQ82A0O" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIOOTenRwDCFsanmGpp1GBL2alMplK2UrhtCubo7oTpFns7/vLS" crossorigin="anonymous"></script>
+
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,6 +96,7 @@
         #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
         .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
         @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
+        /* Formatted Content Styles */
         .formatted-content p:not(:last-child) { margin-bottom: 0.75rem; }
         .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
         .formatted-content ul { list-style-type: disc; }
@@ -100,6 +104,7 @@
         .formatted-content pre { background-color: var(--bg-primary); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
         .formatted-content code { background-color: var(--bg-primary); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
         .formatted-content pre code { background-color: transparent; padding: 0; }
+        .katex-display { overflow-x: auto; overflow-y: hidden; }
 
     </style>
 </head>
@@ -191,7 +196,7 @@
         function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
         const formatDate = (timestamp) => new Date(timestamp).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-        // --- AUTH & ONBOARDING ---
+        // --- AUTH ---
         async function init() {
             try {
                 TG.ready(); TG.expand();
@@ -210,14 +215,13 @@
                 
                 const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
                 const username = tgUser.username || `id${tgUser.id}`;
-                const profileIcon = tgUser.photo_url || null;
-
+                
                 if (!userData) {
-                    const newUser = { id: tgUser.id, fullName: fullName, username: username, profileIcon: profileIcon, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
+                    const newUser = { id: tgUser.id, fullName: fullName, username: username, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
                     await userRef.set(newUser);
                     startAppSession(newUser);
                 } else {
-                    const updates = { username: username, fullName: fullName, profileIcon: profileIcon };
+                    const updates = { username: username, fullName: fullName };
                     if (ADMIN_TELEGRAM_USERNAMES.includes(username) && !userData.isAdmin) {
                         updates.isAdmin = true;
                     }
@@ -839,4 +843,5 @@
     </script>
 </body>
 </html>
+
 
