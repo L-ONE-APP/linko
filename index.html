@@ -46,7 +46,7 @@
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
         .glass-nav { pointer-events: auto; }
         main { padding-bottom: calc(var(--safe-area-bottom) + 90px); }
-        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
+        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; cursor: pointer; }
         .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
         .accent-button:disabled { background-color: var(--text-secondary); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .no-outline:focus { outline: none; box-shadow: none; }
@@ -105,6 +105,7 @@
         .formatted-content code { background-color: var(--bg-primary); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
         .formatted-content pre code { background-color: transparent; padding: 0; }
         .katex-display { overflow-x: auto; overflow-y: hidden; }
+        .modal-close-btn { cursor: pointer; }
 
     </style>
 </head>
@@ -480,20 +481,19 @@
         }
         
         // --- MODALS ---
-        function openModal(modal, data) {
+        async function openModal(modal, data) {
              if (!modal) return;
              modals.overlay.classList.add('active'); 
              currentOpenModal = modal; 
-             populateModal(modal, data); 
+             await populateModal(modal, data); // AWAIT here is the key fix
              modal.classList.add('active'); 
              TG.BackButton.show(); 
         }
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
         
         async function callGemini(prompt, imageParts = []) {
-             const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // Replace with your key
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
-            const model = imageParts.length > 0 ? "gemini-pro-vision" : "gemini-pro";
+            const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // Replace with your key
+            const model = imageParts.length > 0 ? "gemini-pro-vision" : "gemini-1.5-flash-latest"; // FIX: Use correct text model
             
             const finalApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -522,7 +522,7 @@
         }
 
 
-        function populateModal(modal, data) {
+        async function populateModal(modal, data) {
             modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col themed-transition"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full themed-transition" style="background-color: var(--border-color);"></div></div></div>`;
             const contentWrapper = modal.firstChild;
 
@@ -549,8 +549,6 @@
                         </main>
                         <footer class="flex-shrink-0 pt-4"><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
                     
-                    loadAndRenderComments(data);
-                    
                     document.getElementById('comment-form').addEventListener('submit', async (e) => { 
                         e.preventDefault(); 
                         const input = document.getElementById('comment-input'); 
@@ -562,6 +560,9 @@
                             showStatus("Комментарий отправлен!", false);
                         } 
                     });
+                    
+                    // Load comments AFTER main content is rendered
+                    loadAndRenderComments(data);
                     break;
                 case modals.settings:
                     modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
