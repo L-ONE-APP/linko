@@ -14,8 +14,6 @@
 
     <!-- AI Solution Formatting -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhs+itH6blOKdeIFcEVR0JFeSdGZPNzDUxVRuDdiQ82A0O" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIOOTenRwDCFsanmGpp1GBL2alMplK2UrhtCubo7oTpFns7/vLS" crossorigin="anonymous"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,15 +68,11 @@
         .date-scroller-btn { position: relative; transition: color 0.3s ease; }
         .date-scroller-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; animation: underlineGrow 0.3s ease; }
         @keyframes underlineGrow { from { width: 0; left: 50%; } to { width: 50%; left: 25%; } }
-        .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); overflow-y: auto; }
+        .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .screen-content { overflow-y: auto; height: 100%; }
         .screen.left { transform: translateX(-100%); }
         .screen.right { transform: translateX(100%); }
         .screen.center { transform: translateX(0); }
-        .loader { display: flex; justify-content: center; align-items: center; }
-        .loader div { width: 0.75rem; height: 0.75rem; background-color: var(--accent); border-radius: 50%; margin: 0 0.25rem; animation: pulse 1.4s infinite ease-in-out both; }
-        .loader div:nth-child(1) { animation-delay: -0.32s; }
-        .loader div:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         #loader-container { position: fixed; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
         .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
         .file-input-label:hover { background-color: var(--accent); color: white; }
@@ -100,7 +94,7 @@
     <div id="app-container" class="relative h-screen w-screen overflow-hidden">
         <!-- Initial Loader -->
         <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center themed-transition" style="background-color: var(--bg-primary);">
-            <div class="loader"><div></div><div></div><div></div></div>
+            <div id="welcome-lottie" class="w-48 h-48"></div>
             <p class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
         </div>
 
@@ -108,11 +102,13 @@
         <div id="content-wrapper" class="opacity-0 transition-opacity duration-500 w-full h-full">
             <div id="loader-container" class="opacity-0 pointer-events-none"><div class="loader"><div></div><div></div><div></div></div></div>
             <div id="screen-main" class="screen center flex-col">
-                <header class="glass-header p-4 flex-shrink-0 themed-transition">
-                    <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
-                    <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
-                </header>
-                <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden overflow-y-auto"></main>
+                <div class="screen-content">
+                    <header class="glass-header p-4 flex-shrink-0 themed-transition">
+                        <h1 class="text-4xl font-bold tracking-tight">Расписание</h1>
+                        <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
+                    </header>
+                    <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden"></main>
+                </div>
             </div>
             <div id="screen-ai" class="screen right flex flex-col">
                 <header class="glass-header p-4 flex-shrink-0 themed-transition flex justify-between items-center">
@@ -122,7 +118,7 @@
                 <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
                     <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
                 </main>
-                <footer class="p-4 flex-shrink-0">
+                <footer class="p-4 flex-shrink-0" style="padding-bottom: calc(var(--safe-area-bottom) + 1rem);">
                     <form id="ai-chat-form" class="flex items-center gap-2">
                         <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
                         <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
@@ -130,19 +126,12 @@
                 </footer>
             </div>
             <div id="screen-profile" class="screen right flex-col">
-                 <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
-                    <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
-                 </header>
-                <main id="profile-main" class="flex-grow p-4 space-y-6 overflow-y-auto"></main>
-            </div>
-            <div id="screen-admin" class="screen right flex-col">
-                <header class="glass-header p-4 flex-shrink-0 themed-transition"><h1 class="text-4xl font-bold tracking-tight">Админ-панель</h1></header>
-                <main class="flex-grow p-4 space-y-6 overflow-y-auto">
-                    <button id="admin-fill-hw" class="w-full p-6 rounded-2xl text-left flex items-center justify-between themed-transition" style="background-color: var(--bg-secondary);">
-                        <div><h2 class="text-xl font-bold">Заполнить ДЗ</h2><p class="text-sm" style="color: var(--text-secondary);">Автоматически с помощью AI</p></div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                </main>
+                <div class="screen-content">
+                    <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
+                        <h1 class="text-4xl font-bold tracking-tight">Профиль</h1>
+                    </header>
+                    <main id="profile-main" class="flex-grow p-4 space-y-6"></main>
+                </div>
             </div>
             <div class="nav-island-container">
                 <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px] rounded-full themed-transition"></nav>
@@ -175,7 +164,8 @@
         const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile') };
         let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
-        let lottieAnimation = null;
+        let welcomeLottie = null;
+        let nodayLottie = null;
 
         // --- UTILS ---
         const vibrate = (style = 'light') => TG.HapticFeedback?.impactOccurred(style);
@@ -189,6 +179,7 @@
         // --- AUTH & ONBOARDING ---
         async function init() {
             try {
+                welcomeLottie = lottie.loadAnimation({ container: document.getElementById('welcome-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'welcome.json' });
                 TG.ready(); TG.expand();
                 setTheme(TG.colorScheme || 'dark');
                 TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
@@ -203,10 +194,10 @@
                 const snapshot = await userRef.once('value');
                 let userData = snapshot.val();
                 
-                const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
+                const fullName = tgUser.username || (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : ''));
 
                 if (!userData) {
-                    const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: null, theme: TG.colorScheme || 'dark', isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) };
+                    const newUser = { id: tgUser.id, fullName: fullName, username: tgUser.username, profileIcon: null, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(tgUser.username) };
                     await userRef.set(newUser);
                     startAppSession(newUser);
                 } else {
@@ -237,7 +228,6 @@
             renderHomeworkForDate(state.currentDate); 
             renderProfile();
             setupAiChat();
-            if(state.user.isAdmin) setupAdminPanel();
         }
 
         async function uploadToCloudinary(file) {
@@ -262,13 +252,57 @@
                 <div class="p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
                     <h3 class="text-lg font-bold mb-4">Настройки</h3>
                     <div class="space-y-4">
+                        <div>
+                            <label class="font-medium mb-2 block">Тема</label>
+                            <div class="flex gap-2">
+                                <button id="theme-light-btn" class="w-full py-2 rounded-lg themed-transition" data-theme="light">Светлая</button>
+                                <button id="theme-dark-btn" class="w-full py-2 rounded-lg themed-transition" data-theme="dark">Тёмная</button>
+                            </div>
+                        </div>
                         <button id="change-name-btn" class="w-full text-left p-3 rounded-lg flex justify-between items-center themed-transition" style="background-color: var(--bg-tertiary);">
                             <span>Сменить имя</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                         </button>
                     </div>
-                </div>`;
+                </div>
+                ${state.user.isAdmin ? `
+                <div class="p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
+                    <h3 class="text-lg font-bold mb-4">Панель администратора</h3>
+                    <button id="admin-fill-hw-profile" class="w-full text-left p-3 rounded-lg flex justify-between items-center themed-transition" style="background-color: var(--bg-tertiary);">
+                        <span>Заполнить ДЗ</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>` : ''}
+            `;
             document.getElementById('change-name-btn').addEventListener('click', () => openModal(modals.settings));
+            document.getElementById('theme-light-btn').addEventListener('click', () => handleThemeChange('light'));
+            document.getElementById('theme-dark-btn').addEventListener('click', () => handleThemeChange('dark'));
+            if(state.user.isAdmin) {
+                document.getElementById('admin-fill-hw-profile').addEventListener('click', () => openAdminHwFlow());
+            }
+            updateThemeButtons();
+        }
+        
+        async function handleThemeChange(theme) {
+            if (theme !== (document.documentElement.getAttribute('data-theme') || 'dark')) {
+                setTheme(theme);
+                await db.ref(`users_tg/${state.user.id}/theme`).set(theme);
+                updateThemeButtons();
+            }
+        }
+        
+        function updateThemeButtons() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const lightBtn = document.getElementById('theme-light-btn');
+            const darkBtn = document.getElementById('theme-dark-btn');
+            if(!lightBtn || !darkBtn) return;
+            if(currentTheme === 'light') {
+                lightBtn.style.backgroundColor = 'var(--accent)'; lightBtn.style.color = 'white';
+                darkBtn.style.backgroundColor = 'var(--bg-tertiary)'; darkBtn.style.color = 'var(--text-primary)';
+            } else {
+                darkBtn.style.backgroundColor = 'var(--accent)'; darkBtn.style.color = 'white';
+                lightBtn.style.backgroundColor = 'var(--bg-tertiary)'; lightBtn.style.color = 'var(--text-primary)';
+            }
         }
 
         async function handleNameChange() {
@@ -289,10 +323,6 @@
         // --- NAVIGATION & UI ---
         function renderNav() {
             let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="ai" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">AI</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
-            if (state.user?.isAdmin) {
-                navHTML += `<button data-screen="admin" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.96.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Админ</span></button>`; 
-                state.screens = ['main', 'ai', 'profile', 'admin'];
-            }
             dom.nav.innerHTML = navHTML;
             document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
             updateNavButtons();
@@ -337,8 +367,8 @@
                 
                 if (!scheduleData) {
                     list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
-                    if (lottieAnimation) lottieAnimation.destroy();
-                    lottieAnimation = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
+                    if (nodayLottie) nodayLottie.destroy();
+                    nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
                     return;
                 }
                 
@@ -392,7 +422,11 @@
         }
         
         // --- MODALS ---
-        function setupAdminPanel() { document.getElementById('admin-fill-hw').addEventListener('click', () => { vibrate(); openAdminHwFlow(); }); }
+        function setupAdminPanel() { 
+            if(document.getElementById('admin-fill-hw-profile')) {
+                document.getElementById('admin-fill-hw-profile').addEventListener('click', () => { vibrate(); openAdminHwFlow(); });
+            }
+        }
         function openModal(modal, data) { modals.overlay.classList.add('active'); currentOpenModal = modal; populateModal(modal, data); modal.classList.add('active'); TG.BackButton.show(); }
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
         async function callGemini(prompt, imageParts = []) {
@@ -467,7 +501,6 @@
                             const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; 
                             await db.ref(`comments/${data.id}`).push().set(newComment); 
                             input.value = ''; 
-                            // Re-render comments would be better, but for now just clear and show status
                             showStatus("Комментарий отправлен!", false);
                         } 
                     });
