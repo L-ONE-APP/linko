@@ -20,10 +20,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.65); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
+            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.5); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
         }
         html[data-theme='light'] {
-            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.65); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.5); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -36,8 +36,8 @@
         .themed-transition { transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
         .glass-header, .glass-nav {
             background-color: var(--bg-header); 
-            backdrop-filter: blur(28px); 
-            -webkit-backdrop-filter: blur(28px);
+            backdrop-filter: blur(32px); 
+            -webkit-backdrop-filter: blur(32px);
         }
         .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
         .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
@@ -50,7 +50,7 @@
         .horizontal-scroll::-webkit-scrollbar { display: none; }
         .horizontal-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .modal { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); transform: translateY(100%); opacity: 0; pointer-events: none; }
-        .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
+        .modal-overlay { background-color: rgba(0,0,0,0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
         .modal.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         
@@ -73,6 +73,11 @@
         .screen.left { transform: translateX(-100%); }
         .screen.right { transform: translateX(100%); }
         .screen.center { transform: translateX(0); }
+        .loader { display: flex; justify-content: center; align-items: center; }
+        .loader div { width: 0.75rem; height: 0.75rem; background-color: var(--accent); border-radius: 50%; margin: 0 0.25rem; animation: pulse 1.4s infinite ease-in-out both; }
+        .loader div:nth-child(1) { animation-delay: -0.32s; }
+        .loader div:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         #loader-container { position: fixed; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
         .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
         .file-input-label:hover { background-color: var(--accent); color: white; }
@@ -88,7 +93,7 @@
         #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
         .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
         @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
-        .formatted-content p { margin-bottom: 0.75rem; }
+        .formatted-content p:not(:last-child) { margin-bottom: 0.75rem; }
         .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
         .formatted-content ul { list-style-type: disc; }
         .formatted-content ol { list-style-type: decimal; }
@@ -103,7 +108,7 @@
     <div id="app-container" class="relative h-screen w-screen overflow-hidden">
         <!-- Initial Loader -->
         <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center themed-transition" style="background-color: var(--bg-primary);">
-            <div id="welcome-lottie" class="w-48 h-48"></div>
+            <div class="loader"><div></div><div></div><div></div></div>
             <p class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
         </div>
 
@@ -127,7 +132,7 @@
                 <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
                     <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
                 </main>
-                <footer class="p-4 flex-shrink-0" style="padding-bottom: calc(var(--safe-area-bottom) + 0.75rem);">
+                <footer class="p-4 flex-shrink-0" style="margin-bottom: 70px;">
                     <form id="ai-chat-form" class="flex items-center gap-2">
                         <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
                         <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
@@ -174,8 +179,8 @@
         const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
         let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
-        let welcomeLottie = null;
         let nodayLottie = null;
+        let aiLottie = null;
 
         // --- UTILS ---
         const vibrate = (style = 'light') => TG.HapticFeedback?.impactOccurred(style);
@@ -189,7 +194,6 @@
         // --- AUTH & ONBOARDING ---
         async function init() {
             try {
-                welcomeLottie = lottie.loadAnimation({ container: document.getElementById('welcome-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'welcome.json' });
                 TG.ready(); TG.expand();
                 setTheme(TG.colorScheme || 'dark');
                 TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
@@ -206,13 +210,14 @@
                 
                 const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
                 const username = tgUser.username || `id${tgUser.id}`;
+                const profileIcon = tgUser.photo_url || null;
 
                 if (!userData) {
-                    const newUser = { id: tgUser.id, fullName: fullName, username: username, profileIcon: null, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
+                    const newUser = { id: tgUser.id, fullName: fullName, username: username, profileIcon: profileIcon, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
                     await userRef.set(newUser);
                     startAppSession(newUser);
                 } else {
-                    const updates = { username: username, fullName: fullName };
+                    const updates = { username: username, fullName: fullName, profileIcon: profileIcon };
                     if (ADMIN_TELEGRAM_USERNAMES.includes(username) && !userData.isAdmin) {
                         updates.isAdmin = true;
                     }
@@ -231,7 +236,7 @@
             setTimeout(() => dom.initialLoader.style.display = 'none', 300);
 
             dom.contentWrapper.classList.add('opacity-100');
-            if (state.user.isAdmin && !state.screens.includes('admin')) {
+            if (state.user.isAdmin && state.screens.indexOf('admin') === -1) {
                 state.screens.push('admin');
             }
             renderNav(); 
@@ -755,12 +760,16 @@
             if (state.aiChatHistory.length === 0) {
                 messagesContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-center">
+                        <div id="ai-lottie" class="w-40 h-40"></div>
                         <div class="space-y-2">
                            <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Помоги сделать дз по геометрии на завтра</button>
                            <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Что такое квадрат?</button>
                            <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Реши дз по алгебре на 17 октября</button>
                         </div>
                     </div>`;
+                 if (aiLottie) aiLottie.destroy();
+                 aiLottie = lottie.loadAnimation({ container: document.getElementById('ai-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'ailot.json' });
+
                 document.querySelectorAll('.ai-template-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const input = document.getElementById('ai-chat-input');
