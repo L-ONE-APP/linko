@@ -687,8 +687,7 @@
             try {
                 // This function uses the old callGemini, it's admin-only and requires a different API key model for image processing.
                 const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // This might need to be a separate key if permissions differ
-                const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-latest:generateContent?key=${apiKey}`;
-
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
                 const date = new Date(state.adminFlowData.date);
                 const currentYear = date.getFullYear();
