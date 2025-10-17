@@ -1,847 +1,119 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KUZBOOK</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-
-    <!-- AI Solution Formatting -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhs+itH6blOKdeIFcEVR0JFeSdGZPNzDUxVRuDdiQ82A0O" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIOOTenRwDCFsanmGpp1GBL2alMplK2UrhtCubo7oTpFns7/vLS" crossorigin="anonymous"></script>
-
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Gemini Чат через Supabase Edge Function</title>
     <style>
-        :root {
-            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.5); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
-        }
-        html[data-theme='light'] {
-            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.5); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
-        }
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg-primary); 
-            color: var(--text-primary); 
-            user-select: none; -webkit-user-select: none; 
-            -webkit-tap-highlight-color: transparent; 
-            transition: background-color 0.4s ease, color 0.4s ease;
+            font-family: sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .themed-transition { transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
-        .glass-header, .glass-nav {
-            background-color: var(--bg-header); 
-            backdrop-filter: blur(32px); 
-            -webkit-backdrop-filter: blur(32px);
+        h1 { color: #007bff; }
+        textarea { 
+            width: 100%; 
+            height: 100px; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            box-sizing: border-box; 
+            border: 1px solid #ccc; 
+            border-radius: 4px;
         }
-        .glass-header { position: sticky; top: 0; z-index: 10; padding-top: calc(var(--safe-area-top) + 1rem); border-bottom: 1px solid var(--border-color); }
-        .nav-island-container { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; padding: 0 1rem calc(var(--safe-area-bottom) + 0.5rem) 1rem; pointer-events: none; }
-        .glass-nav { pointer-events: auto; }
-        main { padding-bottom: calc(var(--safe-area-bottom) + 90px); }
-        .accent-button { background-color: var(--accent); color: white; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; }
-        .accent-button:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); }
-        .accent-button:disabled { background-color: var(--text-secondary); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .no-outline:focus { outline: none; box-shadow: none; }
-        .horizontal-scroll::-webkit-scrollbar { display: none; }
-        .horizontal-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .modal { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); transform: translateY(100%); opacity: 0; pointer-events: none; }
-        .modal-overlay { background-color: rgba(0,0,0,0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
-        .modal.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        
-        .scale-in-up { animation: scaleInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
-        @keyframes scaleInUp { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-        .slide-out-left { animation: slideOutLeft 0.3s forwards ease-out; }
-        .slide-out-right { animation: slideOutRight 0.3s forwards ease-out; }
-        @keyframes slideOutLeft { to { transform: translateX(-100%); opacity: 0; } }
-        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
-        
-        .checkbox-custom { -webkit-appearance: none; appearance: none; background-color: transparent; width: 1.5rem; height: 1.5rem; border: 2px solid var(--text-secondary); border-radius: 0.375rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s ease; }
-        .checkbox-custom:checked { background-color: var(--accent); border-color: var(--accent); }
-        .checkbox-custom:checked::after { content: ''; position: absolute; left: 0.45rem; top: 0.15rem; width: 0.4rem; height: 0.8rem; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
-        .date-scroller-btn { position: relative; transition: color 0.3s ease; }
-        .date-scroller-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 25%; right: 25%; height: 3px; background-color: var(--accent); border-radius: 2px; animation: underlineGrow 0.3s ease; }
-        @keyframes underlineGrow { from { width: 0; left: 50%; } to { width: 50%; left: 25%; } }
-        .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .screen-content { overflow-y: auto; height: 100%; }
-        .screen.left { transform: translateX(-100%); }
-        .screen.right { transform: translateX(100%); }
-        .screen.center { transform: translateX(0); }
-        .loader { display: flex; justify-content: center; align-items: center; }
-        .loader div { width: 0.75rem; height: 0.75rem; background-color: var(--accent); border-radius: 50%; margin: 0 0.25rem; animation: pulse 1.4s infinite ease-in-out both; }
-        .loader div:nth-child(1) { animation-delay: -0.32s; }
-        .loader div:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-        #loader-container { position: fixed; inset: 0; z-index: 99; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
-        .file-input-label { background-color: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
-        .file-input-label:hover { background-color: var(--accent); color: white; }
-        
-        /* AI Chat Styles */
-        #ai-chat-messages { scroll-behavior: smooth; }
-        .ai-message, .user-message { max-width: 80%; }
-        .typing-indicator span { height: 8px; width: 8px; margin: 0 2px; background-color: var(--text-secondary); display: inline-block; border-radius: 50%; opacity: 0.4; animation: typing 1s infinite; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.1s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.2s; }
-        @keyframes typing { 0%, 100% { opacity: 0.4; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
-        #ai-chat-main::-webkit-scrollbar { display: none; }
-        #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
-        .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
-        @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
-        /* Formatted Content Styles */
-        .formatted-content p:not(:last-child) { margin-bottom: 0.75rem; }
-        .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
-        .formatted-content ul { list-style-type: disc; }
-        .formatted-content ol { list-style-type: decimal; }
-        .formatted-content pre { background-color: var(--bg-primary); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
-        .formatted-content code { background-color: var(--bg-primary); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
-        .formatted-content pre code { background-color: transparent; padding: 0; }
-        .katex-display { overflow-x: auto; overflow-y: hidden; }
-
+        button { 
+            padding: 10px 15px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            transition: background-color 0.3s;
+        }
+        button:hover:enabled { background-color: #0056b3; }
+        button:disabled { 
+            background-color: #cccccc; 
+            cursor: not-allowed; 
+        }
+        #response-container { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 5px; 
+            background-color: #f9f9f9; 
+            white-space: pre-wrap; 
+            min-height: 50px;
+        }
     </style>
 </head>
-<body class="overflow-hidden">
+<body>
+    <h1>Чат с Gemini через Supabase 🤖</h1>
 
-    <div id="app-container" class="relative h-screen w-screen overflow-hidden">
-        <!-- Initial Loader -->
-        <div id="initial-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center themed-transition" style="background-color: var(--bg-primary);">
-            <div class="loader"><div></div><div></div><div></div></div>
-            <p class="mt-4" style="color: var(--text-secondary);">Авторизация...</p>
-        </div>
+    <textarea id="prompt-input" placeholder="Введите ваш вопрос для Gemini..."></textarea>
+    <button id="send-button">Отправить запрос</button>
 
-        <!-- Main Content -->
-        <div id="content-wrapper" class="opacity-0 transition-opacity duration-500 w-full h-full">
-            <div id="loader-container" class="opacity-0 pointer-events-none"><div class="loader"><div></div><div></div><div></div></div></div>
-            <div id="screen-main" class="screen center flex-col">
-                <div class="screen-content">
-                    <header class="glass-header p-4 flex-shrink-0 themed-transition">
-                        <h1 class="text-3xl font-bold tracking-tight">Расписание</h1>
-                        <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
-                    </header>
-                    <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden"></main>
-                </div>
-            </div>
-            <div id="screen-ai" class="screen right flex flex-col">
-                <header class="glass-header p-4 flex-shrink-0 themed-transition flex justify-between items-center">
-                    <h1 class="text-3xl font-bold tracking-tight">AI Помощник</h1>
-                    <button id="clear-chat-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                </header>
-                <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
-                    <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
-                </main>
-                <footer class="p-4 flex-shrink-0" style="margin-bottom: 70px;">
-                    <form id="ai-chat-form" class="flex items-center gap-2">
-                        <input id="ai-chat-input" type="text" placeholder="Спросите что-нибудь..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);">
-                        <button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
-                    </form>
-                </footer>
-            </div>
-            <div id="screen-profile" class="screen right flex-col">
-                <div class="screen-content">
-                    <header class="glass-header p-4 flex-shrink-0 flex items-center justify-between themed-transition">
-                        <h1 class="text-3xl font-bold tracking-tight">Профиль</h1>
-                    </header>
-                    <main id="profile-main" class="flex-grow p-4 space-y-6"></main>
-                </div>
-            </div>
-            <div class="nav-island-container">
-                <nav id="app-nav" class="glass-nav flex justify-around items-center h-[55px] rounded-full themed-transition"></nav>
-            </div>
-        </div>
-        <div id="admin-status" class="text-center p-4 rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none fixed bottom-24 left-4 right-4 z-30"></div>
-        <!-- Modals -->
-        <div id="modal-overlay" class="modal-overlay fixed inset-0 z-30"></div>
-        <div id="modal-lesson" class="modal fixed inset-0 z-40 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
-        <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
-        <div id="modal-confirm" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
-        <div id="modal-settings" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
-        <div id="modal-user-profile" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
-    </div>
+    <h2>Ответ AI:</h2>
+    <div id="response-container">Ожидание запроса...</div>
 
     <script>
-        // --- CONFIG ---
-        const firebaseConfig = { databaseURL: "https://elevate-4e187-default-rtdb.europe-west1.firebasedatabase.app/" };
-        const CLOUDINARY_API_KEY = '238868418732411';
-        const CLOUDINARY_UPLOAD_PRESET = 'LonePreset';
-        const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
-        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
+        // Конфигурация Supabase и функции
+        const SUPABASE_PROJECT_REF = 'biooiajgiryjxkeqtakg'; 
+        const FUNCTION_NAME = 'gemini-chat'; 
+        const FUNCTION_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${FUNCTION_NAME}`;
 
-        // --- INIT ---
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const TG = window.Telegram.WebApp;
+        // Ваш Анонимный ключ
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y'; 
 
-        // --- DOM & STATE ---
-        const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lesson: document.getElementById('modal-lesson'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
-        let currentOpenModal = null;
-        let nodayLottie = null;
-        let aiLottie = null;
+        const promptInput = document.getElementById('prompt-input');
+        const sendButton = document.getElementById('send-button');
+        const responseContainer = document.getElementById('response-container');
 
-        // --- UTILS ---
-        const vibrate = (style = 'light') => TG.HapticFeedback?.impactOccurred(style);
-        const showLoader = () => dom.loader.classList.remove('opacity-0', 'pointer-events-none');
-        const hideLoader = () => dom.loader.classList.add('opacity-0', 'pointer-events-none');
-        const showStatus = (message, isError) => { dom.adminStatus.textContent = message; dom.adminStatus.className = `text-center p-4 rounded-lg opacity-100 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white pointer-events-none fixed bottom-24 left-4 right-4 z-30`; setTimeout(() => { dom.adminStatus.classList.remove('opacity-100'); }, 4000); };
-        const fileToPart = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve({ inlineData: { mimeType: file.type, data: reader.result.split(',')[1] } }); reader.onerror = reject; reader.readAsDataURL(file); });
-        function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
-        const formatDate = (timestamp) => new Date(timestamp).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        sendButton.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
 
-        // --- AUTH ---
-        async function init() {
+            if (!prompt) {
+                alert('Пожалуйста, введите ваш вопрос.');
+                return;
+            }
+
+            responseContainer.textContent = 'Отправка запроса...';
+            sendButton.disabled = true;
+
             try {
-                TG.ready(); TG.expand();
-                setTheme(TG.colorScheme || 'dark');
-                TG.onEvent('themeChanged', () => setTheme(TG.colorScheme));
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Авторизация с использованием Anon Key
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+                    },
+                    body: JSON.stringify({ prompt: prompt }),
+                });
 
-                const tgUser = TG.initDataUnsafe?.user;
-                if (!tgUser) {
-                    dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка: Не удалось получить данные Telegram.<br>Пожалуйста, откройте приложение через Telegram.</p>`;
-                    return;
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Обработка ошибок HTTP (например, 404, 500 от Supabase)
+                    throw new Error(data.details || data.error || `Ошибка HTTP! Статус: ${response.status}`);
                 }
 
-                const userRef = db.ref('users_tg/' + tgUser.id);
-                const snapshot = await userRef.once('value');
-                let userData = snapshot.val();
-                
-                const fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
-                const username = tgUser.username || `id${tgUser.id}`;
-                
-                if (!userData) {
-                    const newUser = { id: tgUser.id, fullName: fullName, username: username, isAdmin: ADMIN_TELEGRAM_USERNAMES.includes(username) };
-                    await userRef.set(newUser);
-                    startAppSession(newUser);
+                if (data.error) {
+                    // Обработка ошибок, возвращенных самой функцией (например, "Prompt is required")
+                    responseContainer.textContent = `Ошибка функции: ${data.error}`;
                 } else {
-                    const updates = { username: username, fullName: fullName };
-                    if (ADMIN_TELEGRAM_USERNAMES.includes(username) && !userData.isAdmin) {
-                        updates.isAdmin = true;
-                    }
-                    await userRef.update(updates);
-                    startAppSession({ ...userData, ...updates });
+                    // Успешный ответ от Gemini
+                    responseContainer.textContent = data.response;
                 }
+
             } catch (error) {
-                console.error("Initialization failed:", error);
-                dom.initialLoader.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка инициализации.<br>Попробуйте перезагрузить приложение.<br><small class="text-xs">${error.message}</small></p>`;
+                responseContainer.textContent = `Ошибка при получении данных: ${error.message}`;
+                console.error('Fetch error:', error);
+            } finally {
+                sendButton.disabled = false;
             }
-        }
-        
-        function startAppSession(userData) {
-            state.user = userData;
-            dom.initialLoader.classList.add('opacity-0');
-            setTimeout(() => dom.initialLoader.style.display = 'none', 300);
-
-            dom.contentWrapper.classList.add('opacity-100');
-            if (state.user.isAdmin && state.screens.indexOf('admin') === -1) {
-                state.screens.push('admin');
-            }
-            renderNav(); 
-            setupDateScroller(); 
-            renderHomeworkForDate(state.currentDate); 
-            renderProfile();
-            setupAiChat();
-        }
-
-        async function uploadToCloudinary(file) {
-            const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); formData.append('api_key', CLOUDINARY_API_KEY);
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
-            if (!response.ok) { const err = await response.json(); throw new Error(`Cloudinary upload failed: ${err.error.message}`); }
-            const data = await response.json();
-            return data.secure_url;
-        }
-
-        // --- PROFILE ---
-        function renderProfile() {
-            const main = document.getElementById('profile-main');
-            if (!state.user) { main.innerHTML = ''; return; }
-            main.innerHTML = `
-                <div class="flex flex-col items-center gap-4 p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
-                    <div class="relative">
-                        <img id="profile-icon" src="${state.user.profileIcon || `https://placehold.co/80x80/1a1a1a/FFFFFF?text=${state.user.fullName.charAt(0)}`}" class="w-20 h-20 rounded-full object-cover">
-                         <label for="profile-icon-upload" class="absolute bottom-0 right-0 p-1.5 rounded-full cursor-pointer" style="background-color: var(--accent);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                            </label>
-                            <input type="file" id="profile-icon-upload" class="hidden" accept="image/*">
-                    </div>
-                    <div><h2 id="profile-name" class="text-2xl font-bold text-center">${state.user.fullName}</h2><p id="profile-login" style="color: var(--text-secondary);" class="text-center">@${state.user.username}</p></div>
-                </div>
-                <div class="p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
-                    <h3 class="text-lg font-bold mb-4">Настройки</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="font-medium mb-2 block">Тема</label>
-                            <div class="flex gap-2">
-                                <button id="theme-light-btn" class="w-full py-2 rounded-lg themed-transition" data-theme="light">Светлая</button>
-                                <button id="theme-dark-btn" class="w-full py-2 rounded-lg themed-transition" data-theme="dark">Тёмная</button>
-                            </div>
-                        </div>
-                        <button id="change-name-btn" class="w-full text-left p-3 rounded-lg flex justify-between items-center themed-transition" style="background-color: var(--bg-tertiary);">
-                            <span>Сменить имя</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </div>
-                </div>
-                ${state.user.isAdmin ? `
-                <div class="p-4 rounded-2xl themed-transition" style="background-color: var(--bg-secondary);">
-                    <h3 class="text-lg font-bold mb-4">Панель администратора</h3>
-                    <button id="admin-fill-hw-profile" class="w-full text-left p-3 rounded-lg flex justify-between items-center themed-transition" style="background-color: var(--bg-tertiary);">
-                        <span>Заполнить ДЗ</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--text-secondary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                    </button>
-                </div>` : ''}
-                <div class="h-20"></div>
-            `;
-            document.getElementById('change-name-btn').addEventListener('click', () => openModal(modals.settings));
-            document.getElementById('theme-light-btn').addEventListener('click', () => handleThemeChange('light'));
-            document.getElementById('theme-dark-btn').addEventListener('click', () => handleThemeChange('dark'));
-            document.getElementById('profile-icon-upload').addEventListener('change', handleProfileIconUpload);
-
-            if(state.user.isAdmin) {
-                document.getElementById('admin-fill-hw-profile').addEventListener('click', () => openAdminHwFlow());
-            }
-            updateThemeButtons();
-        }
-
-        async function handleProfileIconUpload(e) {
-            const file = e.target.files[0]; if (!file) return;
-            showLoader();
-            try {
-                const imageUrl = await uploadToCloudinary(file);
-                await db.ref(`users_tg/${state.user.id}/profileIcon`).set(imageUrl);
-                state.user.profileIcon = imageUrl;
-                document.getElementById('profile-icon').src = imageUrl;
-                showStatus('Аватар обновлен!', false);
-            } catch (error) { console.error('Profile icon upload error:', error); showStatus(`Ошибка загрузки: ${error.message}`, true);
-            } finally { hideLoader(); }
-        }
-        
-        async function handleThemeChange(theme) {
-            if (theme !== (document.documentElement.getAttribute('data-theme') || 'dark')) {
-                setTheme(theme);
-                await db.ref(`users_tg/${state.user.id}/theme`).set(theme);
-                updateThemeButtons();
-            }
-        }
-        
-        function updateThemeButtons() {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const lightBtn = document.getElementById('theme-light-btn');
-            const darkBtn = document.getElementById('theme-dark-btn');
-            if(!lightBtn || !darkBtn) return;
-            if(currentTheme === 'light') {
-                lightBtn.style.backgroundColor = 'var(--accent)'; lightBtn.style.color = 'white';
-                darkBtn.style.backgroundColor = 'var(--bg-tertiary)'; darkBtn.style.color = 'var(--text-primary)';
-            } else {
-                darkBtn.style.backgroundColor = 'var(--accent)'; darkBtn.style.color = 'white';
-                lightBtn.style.backgroundColor = 'var(--bg-tertiary)'; lightBtn.style.color = 'var(--text-primary)';
-            }
-        }
-
-        async function handleNameChange() {
-            vibrate();
-            const newName = document.getElementById('settings-new-name').value.trim();
-            if (newName && newName !== state.user.fullName) {
-                showLoader();
-                try {
-                    await db.ref(`users_tg/${state.user.id}/fullName`).set(newName);
-                    state.user.fullName = newName;
-                    renderProfile();
-                    showStatus('Имя успешно изменено!', false);
-                } catch (error) { showStatus('Ошибка при смене имени.', true); }
-                finally { hideLoader(); closeModal(); }
-            } else { closeModal(); }
-        }
-        
-        // --- NAVIGATION & UI ---
-        function renderNav() {
-            let navHTML = `<button data-screen="main" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><span class="text-xs font-medium">ДЗ</span></button><button data-screen="ai" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">AI</span></button><button data-screen="profile" class="nav-btn p-2 rounded-lg w-20 text-center transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg><span class="text-xs font-medium">Профиль</span></button>`;
-            dom.nav.innerHTML = navHTML;
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', navigate));
-            updateNavButtons();
-        }
-        function navigate() { vibrate(); const newScreen = this.dataset.screen; if (newScreen === state.currentScreen) return; const oldScreenEl = document.getElementById(`screen-${state.currentScreen}`); const newScreenEl = document.getElementById(`screen-${newScreen}`); const oldIndex = state.screens.indexOf(state.currentScreen); const newIndex = state.screens.indexOf(newScreen); if (newIndex > oldIndex) { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('left'); newScreenEl.classList.remove('right'); newScreenEl.classList.add('center'); } else { oldScreenEl.classList.remove('center'); oldScreenEl.classList.add('right'); newScreenEl.classList.remove('left'); newScreenEl.classList.add('center'); } state.currentScreen = newScreen; updateNavButtons(); }
-        function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
-        
-        // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
-        
-        function handleDateChange(newDate) {
-            vibrate();
-            const scroller = document.getElementById('date-scroller');
-            const oldActive = scroller.querySelector('.active');
-            if (oldActive) { oldActive.classList.remove('active'); oldActive.style.color = 'var(--text-secondary)'; }
-            
-            const newActive = scroller.querySelector(`[data-date="${newDate.toISOString().split('T')[0]}"]`);
-            if (newActive) { newActive.classList.add('active'); newActive.style.color = 'var(--accent)'; }
-
-            const list = document.getElementById('homework-list');
-            const direction = newDate > state.currentDate ? 'left' : 'right';
-            
-            list.classList.add(`slide-out-${direction}`);
-            list.addEventListener('animationend', () => {
-                renderHomeworkForDate(newDate, direction);
-            }, { once: true });
-
-            state.currentDate = newDate;
-        }
-
-        async function renderHomeworkForDate(date, direction = 'left') {
-            const list = document.getElementById('homework-list');
-            list.className = 'flex-grow p-4 relative'; // Reset classes
-            list.innerHTML = `<div class="absolute inset-0 flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
-            const dateString = date.toISOString().split('T')[0];
-            
-            try {
-                const snapshot = await db.ref('schedule/' + dateString).once('value');
-                const scheduleData = snapshot.val();
-                
-                list.className = 'flex-grow p-4 relative';
-                
-                if (!scheduleData) {
-                    list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
-                    if (nodayLottie) nodayLottie.destroy();
-                    nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
-                    return;
-                }
-                
-                const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
-                const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
-                
-                list.innerHTML = '';
-                schedule.forEach((hw, index) => {
-                    const isCompleted = completedHomeworks[hw.id] || false;
-                    const item = document.createElement('div');
-                    item.className = 'flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
-                    item.style.backgroundColor = 'var(--bg-secondary)';
-                    item.style.animationDelay = `${index * 70}ms`;
-                    
-                    item.innerHTML = `
-                        <div class="flex-grow">
-                            <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
-                            <p class="font-bold text-lg">${hw.subject}</p>
-                        </div>
-                        <div class="text-right flex-shrink-0 flex flex-col items-center gap-2">
-                             <div class="h-6 w-6 ml-auto">
-                                ${hw.homework_text ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 relative" style="color: var(--accent);" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>` : ''}
-                             </div>
-                           <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom" ${isCompleted ? 'checked' : ''}>
-                        </div>`;
-
-                    item.addEventListener('click', (e) => { if (!e.target.classList.contains('checkbox-custom')) openModal(modals.lesson, { ...hw, date: dateString }); });
-                    item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
-                    
-                    list.appendChild(item);
-                });
-                list.innerHTML += `<div class="h-20"></div>`; // Spacer for nav island
-            } catch (error) {
-                console.error("Error fetching schedule:", error);
-                list.innerHTML = `<p class="text-red-500 text-center mt-10">Не удалось загрузить расписание.</p>`;
-            }
-        }
-        function handleCheckboxChange(e) { 
-            vibrate(); 
-            const scheduleId = e.target.dataset.scheduleId; 
-            const date = e.target.dataset.date;
-            const isChecked = e.target.checked; 
-            const key = `completed_${state.user.id}_${date}`;
-            const completed = JSON.parse(localStorage.getItem(key) || '{}');
-            if (isChecked) {
-                completed[scheduleId] = true;
-            } else {
-                delete completed[scheduleId];
-            }
-            localStorage.setItem(key, JSON.stringify(completed));
-        }
-        
-        // --- MODALS ---
-        function openModal(modal, data) {
-             if (!modal) return;
-             modals.overlay.classList.add('active'); 
-             currentOpenModal = modal; 
-             populateModal(modal, data); 
-             modal.classList.add('active'); 
-             TG.BackButton.show(); 
-        }
-        function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
-        async function callGemini(prompt, imageParts = []) {
-             const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
-            try {
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) throw new Error("Не удалось получить ответ от AI.");
-                return text;
-            } catch (error) { console.error("Fetch/Gemini Error:", error); throw error; }
-        }
-
-        async function populateModal(modal, data) {
-            modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col themed-transition"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full themed-transition" style="background-color: var(--border-color);"></div></div></div>`;
-            const contentWrapper = modal.firstChild;
-
-            switch(modal) {
-                case modals.lesson:
-                    let attachmentsHTML = '';
-                    if (data.attachments && data.attachments.length > 0) {
-                        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-                        const images = data.attachments.filter(url => imageExtensions.some(ext => url.toLowerCase().includes(ext)));
-                        const files = data.attachments.filter(url => !images.includes(url));
-
-                        if(images.length > 0) {
-                            attachmentsHTML += `<details class="themed-transition rounded-lg" style="background-color: var(--bg-secondary);"><summary class="p-3 cursor-pointer font-semibold">Показать ${images.length} изображений</summary><div class="p-3 border-t" style="border-color: var(--border-color);">${images.map(url => `<img src="${url}" class="w-full rounded-lg mb-2">`).join('')}</div></details>`;
-                        }
-                        if(files.length > 0) {
-                            attachmentsHTML += files.map(url => `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2" style="background-color: var(--bg-secondary); color: var(--text-primary);">...<span class="truncate">Прикрепленный файл</span></a>`).join('');
-                        }
-                    }
-
-                    contentWrapper.innerHTML += `<header class="flex-shrink-0 flex items-center justify-between pb-4"><div><h2 class="text-2xl font-bold">${data.subject}</h2><p class="text-sm" style="color: var(--text-secondary);">${data.time}</p></div><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>
-                        <main class="flex-grow overflow-y-auto space-y-4">
-                            <div><h3 class="font-semibold text-lg mb-2">Домашнее задание:</h3><p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p><div class="mt-4 space-y-2">${attachmentsHTML}</div></div>
-                             <div class="border-t pt-4" style="border-color: var(--border-color);"><h3 class="font-semibold text-lg mb-2">Комментарии</h3><div id="comments-container" class="space-y-2"></div></div>
-                        </main>
-                        <footer class="flex-shrink-0 pt-4"><form id="comment-form" class="flex gap-2"><input id="comment-input" type="text" placeholder="Ваш комментарий..." class="w-full p-3 rounded-full no-outline themed-transition" style="background-color: var(--bg-tertiary);"><button type="submit" class="p-3 rounded-full accent-button"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button></form></footer>`;
-                    
-                    const commentsContainer = document.getElementById('comments-container');
-                    const commentsSnapshot = await db.ref(`comments/${data.id}`).once('value');
-                    const commentsData = commentsSnapshot.val();
-                    if(commentsData) {
-                        Object.values(commentsData).reverse().forEach((comment, index) => {
-                           const commentEl = document.createElement('div');
-                            commentEl.className = 'p-3 rounded-lg mb-2 flex gap-3 items-start opacity-0 scale-in-up';
-                            commentEl.style.backgroundColor = 'var(--bg-tertiary)';
-                            commentEl.style.animationDelay = `${index * 70}ms`;
-                            commentEl.innerHTML = `
-                                <img src="${comment.authorIcon || `https://placehold.co/40x40/1a1a1a/FFFFFF?text=${comment.authorName.charAt(0)}`}" class="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer" data-user-id="${comment.authorId}">
-                                <div>
-                                    <div class="flex items-baseline gap-2">
-                                        <p class="font-bold text-sm cursor-pointer" data-user-id="${comment.authorId}">${comment.authorName}</p>
-                                        <p class="text-xs" style="color: var(--text-secondary);">${formatDate(comment.timestamp)}</p>
-                                    </div>
-                                    <p class="text-white/90">${comment.text}</p>
-                                </div>
-                            `;
-                            commentsContainer.append(commentEl);
-                        });
-                    }
-
-                    document.getElementById('comment-form').addEventListener('submit', async (e) => { 
-                        e.preventDefault(); 
-                        const input = document.getElementById('comment-input'); 
-                        const text = input.value.trim(); 
-                        if (text) { 
-                            const newComment = { text, authorId: state.user.id, authorName: state.user.fullName, authorIcon: state.user.profileIcon, timestamp: Date.now() }; 
-                            await db.ref(`comments/${data.id}`).push().set(newComment); 
-                            input.value = ''; 
-                            showStatus("Комментарий отправлен!", false);
-                        } 
-                    });
-                    break;
-                case modals.settings:
-                    modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
-                    document.getElementById('settings-save-name-btn').addEventListener('click', handleNameChange);
-                    break;
-                 case modals.userProfile:
-                    contentWrapper.innerHTML += `
-                        <main class="flex-grow flex flex-col items-center justify-center p-4">
-                            <div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;">
-                                <div class="flex flex-col items-center gap-4">
-                                    <img src="${data.profileIcon || `https://placehold.co/80x80/1a1a1a/FFFFFF?text=${data.fullName.charAt(0)}`}" class="w-24 h-24 rounded-full object-cover">
-                                    <h2 class="text-2xl font-bold text-center">${data.fullName}</h2>
-                                    <p style="color: var(--text-secondary);">@${data.username}</p>
-                                    <a href="https://t.me/${data.username}" target="_blank" class="accent-button w-full py-3 rounded-lg text-center font-semibold mt-4">Посмотреть в Telegram</a>
-                                    <button class="modal-close-btn w-full py-3 rounded-lg themed-transition mt-2" style="background-color: var(--bg-tertiary);">Закрыть</button>
-                                </div>
-                            </div>
-                        </main>`;
-                    break;
-                case modals.confirm:
-                     modals.confirm.innerHTML = `
-                        <div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;">
-                            <h3 class="text-xl font-bold mb-2">${data.title}</h3>
-                            <p class="mb-6" style="color:var(--text-secondary);">${data.message}</p>
-                            <div class="flex gap-4 mt-6">
-                                <button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button>
-                                <button id="confirm-action-btn" class="bg-red-500 text-white w-full py-3 rounded-lg">Да</button>
-                            </div>
-                        </div>`;
-                    document.getElementById('confirm-action-btn').addEventListener('click', () => {
-                        data.onConfirm();
-                        closeModal();
-                    });
-                    break;
-            }
-            contentWrapper.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
-            contentWrapper.querySelectorAll('[data-user-id]').forEach(el => el.addEventListener('click', async (e) => {
-                const userId = e.currentTarget.dataset.userId;
-                const userSnapshot = await db.ref(`users_tg/${userId}`).once('value');
-                const userData = userSnapshot.val();
-                if(userData) {
-                    closeModal();
-                    setTimeout(() => openModal(modals.userProfile, userData), 300);
-                }
-            }));
-        }
-        
-        // --- ADMIN FLOW ---
-        function openAdminHwFlow() { state.adminFlowData = { attachments: {} }; openModal(modals.admin); renderAdminHwStep(1); }
-
-        function renderAdminHwStep(step) {
-            const modal = modals.admin;
-            let content = `<div class="p-4 pt-0 h-full flex flex-col"><div class="relative py-2"><div class="absolute top-4 left-0 h-1 rounded-full themed-transition" style="background-color: var(--bg-tertiary); width: 100%;"></div><div id="admin-progress-bar" class="absolute top-4 left-0 h-1 rounded-full transition-all duration-500" style="background-color: var(--accent); width: ${step * 25}%;"></div></div></div>`;
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = content;
-            const contentWrapper = wrapper.firstChild;
-
-            const header = (title) => `<header class="flex-shrink-0 flex items-center justify-between pb-4"><h2 class="text-2xl font-bold">${title}</h2><button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></header>`;
-            const footer = (nextId, nextText, prevId, prevText) => `<footer class="flex-shrink-0 pt-4 flex gap-4">${prevId ? `<button id="${prevId}" class="w-full py-3 text-lg font-semibold rounded-xl no-outline themed-transition" style="background-color: var(--bg-tertiary);">${prevText}</button>` : ''}<button id="${nextId}" class="accent-button w-full py-3 text-lg font-semibold rounded-xl no-outline" disabled>${nextText}</button></footer>`;
-            
-            let stepContent = '';
-            switch(step) {
-                case 1: // Date and Photo selection
-                    stepContent = `${header('Шаг 1/4: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg themed-transition" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
-                    contentWrapper.innerHTML += stepContent;
-                    modal.innerHTML = wrapper.innerHTML;
-                    
-                    const dateInput = document.getElementById('admin-hw-date-select');
-                    const fileInput = document.getElementById('admin-hw-files');
-                    const nextBtn = document.getElementById('admin-hw-s1-next');
-                    const checkReady = () => { nextBtn.disabled = !(dateInput.value && fileInput.files.length > 0); };
-                    dateInput.addEventListener('change', (e) => { state.adminFlowData.date = e.target.value; checkReady(); });
-                    fileInput.addEventListener('change', (e) => { state.adminFlowData.hwFiles = e.target.files; document.getElementById('admin-hw-files-preview').textContent = `${e.target.files.length} фото выбрано.`; checkReady(); });
-                    nextBtn.addEventListener('click', () => { vibrate(); renderAdminHwStep(2); processAllPhotos(); });
-                    break;
-                case 2: // AI Processing
-                    stepContent = `${header('Шаг 2/4: Анализ')}<main id="admin-hw-s2-main" class="flex-grow flex flex-col justify-center items-center text-center"><div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует фото...</p></main>${footer('admin-hw-s2-next', 'Далее', 'admin-hw-s2-back', 'Назад')}`;
-                    contentWrapper.innerHTML += stepContent;
-                    modal.innerHTML = wrapper.innerHTML;
-                    document.getElementById('admin-hw-s2-back').addEventListener('click', () => renderAdminHwStep(1));
-                    break;
-                case 3: // AI Response Debug
-                    stepContent = `${header('Шаг 3/4: Отладка AI')}<main id="admin-hw-s3-main" class="flex-grow overflow-y-auto"><p class="mb-4">Это "сырой" JSON от AI. Проверьте его перед продолжением.</p><textarea id="ai-json-debug" class="w-full h-full p-2 rounded font-mono text-sm themed-transition" style="background-color: var(--bg-tertiary);"></textarea></main>${footer('admin-hw-s3-next', 'Подтвердить', 'admin-hw-s3-back', 'Назад')}`;
-                    contentWrapper.innerHTML += stepContent;
-                    modal.innerHTML = wrapper.innerHTML;
-                    const debugArea = document.getElementById('ai-json-debug');
-                    debugArea.value = state.adminFlowData.rawJson;
-                    document.getElementById('admin-hw-s3-next').disabled = false;
-                    document.getElementById('admin-hw-s3-back').addEventListener('click', () => renderAdminHwStep(2));
-                    document.getElementById('admin-hw-s3-next').addEventListener('click', () => { 
-                        try {
-                            state.adminFlowData.lessons = JSON.parse(debugArea.value);
-                            renderAdminHwStep(4);
-                        } catch(e) {
-                            alert("Ошибка в JSON! Пожалуйста, исправьте перед продолжением.");
-                        }
-                    });
-                    break;
-                case 4: // Final Review and Publish
-                    stepContent = `${header('Шаг 4/4: Публикация')}<main id="admin-hw-s4-main" class="flex-grow overflow-y-auto"><p class="mb-4">Проверьте результат и прикрепите файлы к урокам, если нужно.</p></main>${footer('admin-hw-publish', 'Опубликовать', 'admin-hw-s4-back', 'Назад')}`;
-                    contentWrapper.innerHTML += stepContent;
-                    modal.innerHTML = wrapper.innerHTML;
-                    document.getElementById('admin-hw-s4-back').addEventListener('click', () => renderAdminHwStep(3));
-                    document.getElementById('admin-hw-publish').addEventListener('click', publishAdminHomework);
-                    const mainEl = document.getElementById('admin-hw-s4-main');
-                    if(state.adminFlowData.lessons) {
-                        state.adminFlowData.lessons.forEach((lesson, index) => {
-                            const uniqueId = `file-${state.adminFlowData.date}-${index}`;
-                            mainEl.innerHTML += `
-                                <div class="p-3 rounded-lg mb-2 themed-transition" style="background-color:var(--bg-secondary);">
-                                    <p class="font-bold">${lesson.subject} <span class="text-sm font-normal" style="color:var(--text-secondary);">${lesson.time}</span></p>
-                                    <textarea class="w-full mt-2 p-2 text-sm rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" data-index="${index}" placeholder="ДЗ, если нужно исправить...">${lesson.homework_text || ''}</textarea>
-                                    <div class="mt-2">
-                                        <label for="${uniqueId}" class="file-input-label themed-transition"><span>Прикрепить файлы</span></label>
-                                        <input type="file" multiple class="hidden" data-index="${index}" id="${uniqueId}">
-                                        <span id="label-${uniqueId}" class="text-sm ml-2" style="color: var(--text-secondary);"></span>
-                                    </div>
-                                </div>`;
-                        });
-                        mainEl.querySelectorAll('textarea').forEach(area => { area.addEventListener('input', (e) => { state.adminFlowData.lessons[e.target.dataset.index].homework_text = e.target.value; }); });
-                        mainEl.querySelectorAll('input[type="file"]').forEach(input => {
-                            input.addEventListener('change', (e) => {
-                                const index = e.target.dataset.index;
-                                const label = document.getElementById(`label-${e.target.id}`);
-                                if (e.target.files.length > 0) {
-                                    state.adminFlowData.attachments[index] = e.target.files;
-                                    label.textContent = `${e.target.files.length} файл(ов)`;
-                                } else {
-                                    delete state.adminFlowData.attachments[index];
-                                    label.textContent = '';
-                                }
-                            });
-                        });
-                    }
-                    document.getElementById('admin-hw-publish').disabled = false;
-                    break;
-            }
-            modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
-        }
-        
-        async function processAllPhotos() {
-            try {
-                const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
-                const date = new Date(state.adminFlowData.date);
-                const currentYear = date.getFullYear();
-
-                const prompt = `Проанализируй эти фото. На них есть и сетка расписания, и домашние задания. Текущий год: ${currentYear}. Мне нужно расписание и ДЗ ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date}.
-                Твоя задача:
-                1. Извлечь из фото список уроков только для этой даты.
-                2. Для каждого урока найти и добавить соответствующее домашнее задание.
-                3. Указать имя учителя для каждого урока.
-                ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи: 'subject', 'time' (в формате ЧЧ:ММ-ЧЧ:ММ), 'teacher', и, если есть, 'homework_text'.
-                Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15', 'teacher': 'Иванова И.И.', 'homework_text': '№123, №124'}]`;
-                
-                const resultText = await callGemini(prompt, imageParts);
-                state.adminFlowData.rawJson = resultText.replace(/```json/g, '').replace(/```/g, '');
-                renderAdminHwStep(3);
-            } catch (e) { alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`); renderAdminHwStep(1); }
-        }
-
-        async function publishAdminHomework() {
-            vibrate(); showLoader();
-            try {
-                for (const index in state.adminFlowData.attachments) {
-                    const fileList = state.adminFlowData.attachments[index];
-                    let fileUrls = [];
-                    for(const file of fileList) { const url = await uploadToCloudinary(file); fileUrls.push(url); }
-                    if (!state.adminFlowData.lessons[index].attachments) { state.adminFlowData.lessons[index].attachments = []; }
-                    state.adminFlowData.lessons[index].attachments.push(...fileUrls);
-                }
-                const date = state.adminFlowData.date;
-                const lessons = state.adminFlowData.lessons;
-                const scheduleRef = db.ref('schedule/' + date);
-                await scheduleRef.set({}); // Clear the day first using set({})
-                for (const lesson of lessons) { await scheduleRef.push().set(lesson); }
-                showStatus('Расписание успешно опубликовано!', false);
-                renderHomeworkForDate(new Date(date));
-            } catch (err) { showStatus(`Ошибка публикации: ${err.message}`, true);
-            } finally { hideLoader(); closeModal(); }
-        }
-
-        // --- AI CHAT ---
-        function setupAiChat() {
-            const form = document.getElementById('ai-chat-form');
-            form.addEventListener('submit', handleAiFormSubmit);
-            document.getElementById('clear-chat-btn').addEventListener('click', () => {
-                vibrate();
-                openModal(modals.confirm, {
-                    title: 'Очистить чат?',
-                    message: 'Вся история переписки с AI будет удалена.',
-                    onConfirm: () => {
-                         const messages = document.querySelectorAll('#ai-chat-messages > div');
-                         messages.forEach((msg, index) => {
-                            msg.classList.add('message-fade-out');
-                            msg.style.animationDelay = `${index * 30}ms`;
-                         });
-                         setTimeout(() => {
-                            state.aiChatHistory = [];
-                            localStorage.removeItem(`ai_chat_${state.user.id}`);
-                            renderAiChat();
-                         }, messages.length * 30 + 300);
-                    }
-                });
-            });
-            
-            const savedHistory = localStorage.getItem(`ai_chat_${state.user.id}`);
-            if(savedHistory) {
-                state.aiChatHistory = JSON.parse(savedHistory);
-            }
-            renderAiChat();
-        }
-
-        function renderAiChat() {
-            const messagesContainer = document.getElementById('ai-chat-messages');
-            messagesContainer.innerHTML = '';
-            if (state.aiChatHistory.length === 0) {
-                messagesContainer.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center">
-                        <div id="ai-lottie" class="w-40 h-40"></div>
-                        <div class="space-y-2">
-                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Помоги сделать дз по геометрии на завтра</button>
-                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Что такое квадрат?</button>
-                           <button class="ai-template-btn p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Реши дз по алгебре на 17 октября</button>
-                        </div>
-                    </div>`;
-                 if (aiLottie) aiLottie.destroy();
-                 aiLottie = lottie.loadAnimation({ container: document.getElementById('ai-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'ailot.json' });
-
-                document.querySelectorAll('.ai-template-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const input = document.getElementById('ai-chat-input');
-                        input.value = e.target.textContent;
-                        handleAiFormSubmit(new Event('submit'));
-                    });
-                });
-            } else {
-                state.aiChatHistory.forEach(msg => addMessageToChat(msg.role, msg.content));
-            }
-        }
-
-        function addMessageToChat(role, content, type = 'text') {
-            const messagesContainer = document.getElementById('ai-chat-messages');
-            const msgEl = document.createElement('div');
-            msgEl.className = `flex mb-4 scale-in-up ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-            msgEl.style.opacity = '0';
-            
-            let innerHTML = '';
-            if (type === 'typing') {
-                innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-            } else {
-                const formattedContent = marked.parse(content, { gfm: true, breaks: true });
-                const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
-                const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
-                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content" style="background-color: ${bgColor}; color: ${textColor};">${formattedContent}</div>`;
-            }
-            msgEl.innerHTML = innerHTML;
-
-            messagesContainer.appendChild(msgEl);
-            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
-            return msgEl;
-        }
-
-        async function handleAiFormSubmit(e) {
-            e.preventDefault();
-            const input = document.getElementById('ai-chat-input');
-            const prompt = input.value.trim();
-            if(!prompt) return;
-
-            input.value = '';
-            state.aiChatHistory.push({ role: 'user', content: prompt });
-            if(state.aiChatHistory.length === 1) renderAiChat(); // Remove templates
-            else addMessageToChat('user', prompt);
-            
-            // AI Logic
-            const typingEl = addMessageToChat('ai', '', 'typing');
-            
-            // TODO: Implement advanced logic to check for homework requests
-            let finalResponse = '';
-            try {
-                finalResponse = await callGemini(prompt);
-            } catch(e) {
-                finalResponse = "Произошла ошибка при обращении к AI.";
-            }
-
-            typingEl.remove();
-            state.aiChatHistory.push({ role: 'ai', content: finalResponse });
-            addMessageToChat('ai', finalResponse);
-
-            localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
-        }
-
-
-        TG.BackButton.onClick(closeModal);
-        document.addEventListener('DOMContentLoaded', init);
+        });
     </script>
 </body>
 </html>
-
-
