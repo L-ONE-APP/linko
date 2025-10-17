@@ -687,7 +687,7 @@
             try {
                 // This function uses the old callGemini, it's admin-only and requires a different API key model for image processing.
                 const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // This might need to be a separate key if permissions differ
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
                 const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
                 const date = new Date(state.adminFlowData.date);
@@ -751,11 +751,22 @@
                          });
                          setTimeout(() => {
                             state.aiChatHistory = [];
+                            localStorage.removeItem(`ai_chat_${state.user.id}`);
                             renderAiChat();
                          }, messages.length * 30 + 300);
                     }
                 });
             });
+
+            const savedHistory = localStorage.getItem(`ai_chat_${state.user.id}`);
+            if(savedHistory) {
+                try {
+                    state.aiChatHistory = JSON.parse(savedHistory);
+                } catch(e) {
+                    console.error("Could not parse chat history:", e);
+                    state.aiChatHistory = [];
+                }
+            }
             renderAiChat();
         }
 
@@ -780,7 +791,7 @@
                         vibrate();
                         const input = document.getElementById('ai-chat-input');
                         input.value = e.target.textContent;
-                        handleAiFormSubmit(new Event('submit', { bubbles: true, cancelable: true }));
+                        document.getElementById('ai-chat-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
                     });
                 });
             } else {
@@ -819,7 +830,8 @@
             msgEl.innerHTML = innerHTML;
 
             messagesContainer.appendChild(msgEl);
-            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+            const chatMain = document.getElementById('ai-chat-main');
+            chatMain.scrollTop = chatMain.scrollHeight;
             return msgEl;
         }
 
@@ -854,10 +866,14 @@
 
             input.value = '';
             // If chat is empty, clear templates before adding the new message
-            if(state.aiChatHistory.length === 0) renderAiChat();
+            if(state.aiChatHistory.length === 0) {
+                document.getElementById('ai-chat-messages').innerHTML = '';
+            }
             
             state.aiChatHistory.push({ role: 'user', content: prompt });
             addMessageToChat('user', prompt);
+            localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
+
             
             const typingEl = addMessageToChat('ai', '', 'typing');
             let finalResponse = '';
@@ -930,6 +946,7 @@
             typingEl.remove();
             state.aiChatHistory.push({ role: 'ai', content: finalResponse });
             addMessageToChat('ai', finalResponse);
+            localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
         }
 
         TG.BackButton.onClick(closeModal);
