@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Gemini Чат через Supabase Edge Function</title>
+    <title>Gemini Чат с Медиа через Supabase</title>
     <style>
+        /* ... (Стили остаются прежними) ... */
         body { 
             font-family: sans-serif; 
             max-width: 600px; 
@@ -23,6 +24,7 @@
             border: 1px solid #ccc; 
             border-radius: 4px;
         }
+        input[type="file"] { margin-bottom: 10px; }
         button { 
             padding: 10px 15px; 
             background-color: #007bff; 
@@ -49,9 +51,10 @@
     </style>
 </head>
 <body>
-    <h1>Чат с Gemini через Supabase 🤖</h1>
+    <h1>Чат с Gemini Vision 📸</h1>
 
-    <textarea id="prompt-input" placeholder="Введите ваш вопрос для Gemini..."></textarea>
+    <textarea id="prompt-input" placeholder="Введите ваш вопрос (например, 'Опиши, что на этом изображении')..."></textarea>
+    <input type="file" id="file-input" accept="image/*,video/*,audio/*">
     <button id="send-button">Отправить запрос</button>
 
     <h2>Ответ AI:</h2>
@@ -62,53 +65,57 @@
         const SUPABASE_PROJECT_REF = 'biooiajgiryjxkeqtakg'; 
         const FUNCTION_NAME = 'gemini-chat'; 
         const FUNCTION_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${FUNCTION_NAME}`;
-
-        // Ваш Анонимный ключ
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y'; 
 
         const promptInput = document.getElementById('prompt-input');
+        const fileInput = document.getElementById('file-input');
         const sendButton = document.getElementById('send-button');
         const responseContainer = document.getElementById('response-container');
 
         sendButton.addEventListener('click', async () => {
             const prompt = promptInput.value.trim();
+            const file = fileInput.files[0];
 
-            if (!prompt) {
-                alert('Пожалуйста, введите ваш вопрос.');
+            if (!prompt && !file) {
+                alert('Пожалуйста, введите вопрос или прикрепите файл.');
                 return;
             }
 
-            responseContainer.textContent = 'Отправка запроса...';
+            responseContainer.textContent = 'Отправка запроса (с медиа)...';
             sendButton.disabled = true;
 
+            const formData = new FormData();
+            formData.append('prompt', prompt);
+            
+            if (file) {
+                formData.append('file', file);
+            }
+
             try {
+                // Внимание: при использовании FormData, Content-Type НЕ должен быть установлен 
+                // вручную в JavaScript, браузер сделает это автоматически (multipart/form-data)
                 const response = await fetch(FUNCTION_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        // Авторизация с использованием Anon Key
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
                     },
-                    body: JSON.stringify({ prompt: prompt }),
+                    body: formData, // Отправляем FormData
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    // Обработка ошибок HTTP (например, 404, 500 от Supabase)
                     throw new Error(data.details || data.error || `Ошибка HTTP! Статус: ${response.status}`);
                 }
 
                 if (data.error) {
-                    // Обработка ошибок, возвращенных самой функцией (например, "Prompt is required")
                     responseContainer.textContent = `Ошибка функции: ${data.error}`;
                 } else {
-                    // Успешный ответ от Gemini
                     responseContainer.textContent = data.response;
                 }
 
             } catch (error) {
-                responseContainer.textContent = `Ошибка при получении данных: ${error.message}`;
+                responseContainer.textContent = `Ошибка: ${error.message}`;
                 console.error('Fetch error:', error);
             } finally {
                 sendButton.disabled = false;
