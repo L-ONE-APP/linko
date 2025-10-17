@@ -124,6 +124,12 @@
         .lesson-item.expanded .expand-icon {
             transform: rotate(90deg);
         }
+        .lesson-item .lesson-header {
+            transition: transform 0.15s ease-out;
+        }
+        .lesson-item .lesson-header:active {
+            transform: scale(0.98);
+        }
 
     </style>
 </head>
@@ -192,6 +198,7 @@
         const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
         const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
         const SUPABASE_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-chat';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y';
 
 
         // --- INIT ---
@@ -453,7 +460,7 @@
                     }
                     
                     item.innerHTML = `
-                        <div class="flex items-center gap-4 w-full cursor-pointer">
+                        <div class="lesson-header flex items-center gap-4 w-full cursor-pointer">
                             <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom flex-shrink-0" ${isCompleted ? 'checked' : ''}>
                             <div class="flex-grow">
                                 <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
@@ -486,7 +493,7 @@
                     `;
 
                     if (hasDetails) {
-                        item.querySelector('.cursor-pointer').addEventListener('click', (e) => {
+                        item.querySelector('.lesson-header').addEventListener('click', (e) => {
                             if (e.target.type !== 'checkbox') {
                                 vibrate();
                                 item.classList.toggle('expanded');
@@ -813,6 +820,9 @@
 
             const response = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                },
                 body: formData
             });
 
@@ -921,3 +931,4 @@
     </script>
 </body>
 </html>
+
