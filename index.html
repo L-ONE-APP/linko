@@ -275,6 +275,8 @@
             renderHomeworkForDate(state.currentDate); 
             renderProfile();
             setupAiChat();
+            // ИСПРАВЛЕНО: Устанавливаем один централизованный обработчик кликов для списка уроков
+            setupHomeworkListListener();
         }
 
         async function uploadToCloudinary(file) {
@@ -398,6 +400,29 @@
         function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK & DATA RENDERING ---
+        
+        // ИСПРАВЛЕНО: Новый централизованный обработчик кликов для всего списка уроков.
+        // Это надежнее, чем добавлять обработчик на каждый элемент в цикле.
+        function setupHomeworkListListener() {
+            const list = document.getElementById('homework-list');
+            list.addEventListener('click', (e) => {
+                // Мы хотим раскрыть урок по клику на заголовок,
+                // но игнорируем клик непосредственно по чекбоксу.
+                if (e.target.matches('input[type="checkbox"]')) {
+                    return;
+                }
+                const header = e.target.closest('.lesson-header');
+                if (header) {
+                    const item = header.closest('.lesson-item');
+                    // Проверяем, есть ли у этого урока детали для раскрытия.
+                    if (item && item.querySelector('.lesson-details')) {
+                        vibrate();
+                        item.classList.toggle('expanded');
+                    }
+                }
+            });
+        }
+
         function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
         
         function handleDateChange(newDate) {
@@ -435,7 +460,7 @@
                 if (!scheduleData) {
                     list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
                     if (nodayLottie) nodayLottie.destroy();
-                    nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
+                    nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'https://assets10.lottiefiles.com/packages/lf20_EMTsq1.json' }); // Using a public URL for Lottie
                     return;
                 }
                 
@@ -491,15 +516,11 @@
                         </div>
                         ` : ''}
                     `;
-
-                    if (hasDetails) {
-                        item.querySelector('.lesson-header').addEventListener('click', (e) => {
-                            if (e.target.type !== 'checkbox') {
-                                vibrate();
-                                item.classList.toggle('expanded');
-                            }
-                        });
-                    }
+                    
+                    // ИСПРАВЛЕНО: Удален индивидуальный обработчик кликов.
+                    // Теперь это обрабатывается централизованной функцией setupHomeworkListListener.
+                    
+                    // Этот обработчик для чекбокса остается, т.к. он зависит от данных конкретного урока.
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
                     
                     list.appendChild(item);
@@ -736,6 +757,7 @@
                          });
                          setTimeout(() => {
                             state.aiChatHistory = [];
+                            // ИСПРАВЛЕНО: Очищаем историю в localStorage
                             localStorage.removeItem(`ai_chat_${state.user.id}`);
                             renderAiChat();
                          }, messages.length * 30 + 300);
@@ -743,9 +765,15 @@
                 });
             });
             
+            // ИСПРАВЛЕНО: Загружаем историю чата из localStorage при запуске
             const savedHistory = localStorage.getItem(`ai_chat_${state.user.id}`);
             if(savedHistory) {
-                state.aiChatHistory = JSON.parse(savedHistory);
+                try {
+                    state.aiChatHistory = JSON.parse(savedHistory);
+                } catch(e) {
+                    console.error("Could not parse chat history:", e);
+                    state.aiChatHistory = [];
+                }
             }
             renderAiChat();
         }
@@ -764,14 +792,16 @@
                         </div>
                     </div>`;
                  if (aiLottie) aiLottie.destroy();
-                 aiLottie = lottie.loadAnimation({ container: document.getElementById('ai-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'ailot.json' });
+                 aiLottie = lottie.loadAnimation({ container: document.getElementById('ai-lottie'), renderer: 'svg', loop: true, autoplay: true, path: 'https://assets5.lottiefiles.com/packages/lf20_vPdy8A.json' }); // Using a public URL for Lottie
 
                 document.querySelectorAll('.ai-template-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         vibrate();
                         const input = document.getElementById('ai-chat-input');
                         input.value = e.target.textContent;
-                        handleAiFormSubmit(new Event('submit', { bubbles: true, cancelable: true }));
+                        // Создаем событие, чтобы форма отправилась, как будто нажали Enter
+                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                        document.getElementById('ai-chat-form').dispatchEvent(submitEvent);
                     });
                 });
             } else {
@@ -810,20 +840,25 @@
             msgEl.innerHTML = innerHTML;
 
             messagesContainer.appendChild(msgEl);
-            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+            // Ensure the parent container scrolls down to show the new message
+            const chatMain = document.getElementById('ai-chat-main');
+            chatMain.scrollTop = chatMain.scrollHeight;
             return msgEl;
         }
 
         async function callSupabaseAI(prompt) {
-            const formData = new FormData();
-            formData.append('prompt', prompt);
+            const requestBody = {
+                history: state.aiChatHistory.slice(0, -1), // Send history without the latest user prompt
+                prompt: prompt
+            };
 
             const response = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -844,11 +879,14 @@
             if(!prompt) return;
 
             input.value = '';
-            // If chat is empty, clear templates before adding the new message
-            if(state.aiChatHistory.length === 0) renderAiChat();
+            // Если чат был пуст (с шаблонами), очищаем его перед добавлением первого сообщения
+            if(state.aiChatHistory.length === 0) {
+                 document.getElementById('ai-chat-messages').innerHTML = '';
+            }
             
             state.aiChatHistory.push({ role: 'user', content: prompt });
             addMessageToChat('user', prompt);
+            // ИСПРАВЛЕНО: Сохраняем историю после сообщения пользователя
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
             
             const typingEl = addMessageToChat('ai', '', 'typing');
@@ -869,7 +907,6 @@
 
                 let hwData = null;
                 try {
-                    // Clean response before parsing
                     const cleanedJson = jsonResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                     hwData = JSON.parse(cleanedJson);
                 } catch (jsonError) {
@@ -923,6 +960,7 @@
             state.aiChatHistory.push({ role: 'ai', content: finalResponse });
             addMessageToChat('ai', finalResponse);
 
+            // ИСПРАВЛЕНО: Сохраняем историю после ответа ИИ
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
         }
 
@@ -931,4 +969,3 @@
     </script>
 </body>
 </html>
-
