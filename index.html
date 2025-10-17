@@ -107,14 +107,30 @@
         .katex-display { overflow-x: auto; overflow-y: hidden; padding-bottom: 0.5rem; }
         .katex { font-size: 1.1em; }
 
-        /* Lesson Styles */
-        .lesson-item {
-            transition: transform 0.15s ease-out;
-            cursor: pointer;
+        /* Lesson Accordion Styles */
+        .lesson-details {
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.4s ease-out;
         }
-        .lesson-item:active {
+        .lesson-details > div {
+            overflow: hidden;
+        }
+        .lesson-item.expanded .lesson-details {
+            grid-template-rows: 1fr;
+        }
+        .expand-icon {
+            transition: transform 0.3s ease;
+        }
+        .lesson-item.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+        .lesson-item .lesson-header {
+            transition: transform 0.15s ease-out;
+        }
+        .lesson-item .lesson-header:active {
             transform: scale(0.98);
         }
+
     </style>
 </head>
 <body class="overflow-hidden">
@@ -133,17 +149,15 @@
                 <div class="screen-content">
                     <header class="glass-header p-4 flex-shrink-0 themed-transition">
                         <h1 class="text-3xl font-bold tracking-tight">Расписание</h1>
+                        <div id="date-scroller" class="horizontal-scroll flex items-center gap-2 mt-4 overflow-x-auto pb-4"></div>
                     </header>
-                    <div class="p-4">
-                        <div id="date-scroller" class="horizontal-scroll glass-nav flex items-center gap-2 p-2 rounded-full themed-transition"></div>
-                    </div>
-                    <main id="homework-list" class="flex-grow p-4 pt-0 relative overflow-x-hidden"></main>
+                    <main id="homework-list" class="flex-grow p-4 relative overflow-x-hidden"></main>
                 </div>
             </div>
             <div id="screen-ai" class="screen right flex flex-col">
                 <header class="glass-header p-4 flex-shrink-0 themed-transition flex justify-between items-center">
                     <h1 class="text-3xl font-bold tracking-tight">AI Помощник</h1>
-                    <button id="clear-chat-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 B 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button id="clear-chat-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" style="color: var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                 </header>
                 <main id="ai-chat-main" class="flex-grow flex flex-col p-4 overflow-y-auto">
                     <div id="ai-chat-messages" class="flex-grow space-y-4"></div>
@@ -170,7 +184,6 @@
         <div id="admin-status" class="text-center p-4 rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none fixed bottom-24 left-4 right-4 z-30"></div>
         <!-- Modals -->
         <div id="modal-overlay" class="modal-overlay fixed inset-0 z-30"></div>
-        <div id="modal-lesson-details" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
         <div id="modal-admin-flow" class="modal fixed inset-0 z-50 flex flex-col themed-transition" style="background-color: var(--bg-primary);"></div>
         <div id="modal-confirm" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
         <div id="modal-settings" class="modal fixed inset-0 z-50 flex items-center justify-center p-4"></div>
@@ -195,8 +208,8 @@
 
         // --- DOM & STATE ---
         const dom = { initialLoader: document.getElementById('initial-loader'), contentWrapper: document.getElementById('content-wrapper'), loader: document.getElementById('loader-container'), nav: document.getElementById('app-nav'), adminStatus: document.getElementById('admin-status')};
-        const modals = { overlay: document.getElementById('modal-overlay'), lessonDetails: document.getElementById('modal-lesson-details'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
-        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [], scheduleCache: {} };
+        const modals = { overlay: document.getElementById('modal-overlay'), admin: document.getElementById('modal-admin-flow'), settings: document.getElementById('modal-settings'), userProfile: document.getElementById('modal-user-profile'), confirm: document.getElementById('modal-confirm') };
+        let state = { user: null, currentScreen: 'main', screens: ['main', 'ai', 'profile'], adminFlowData: {}, currentDate: new Date(), aiChatHistory: [] };
         let currentOpenModal = null;
         let nodayLottie = null;
         let aiLottie = null;
@@ -385,7 +398,7 @@
         function updateNavButtons() { document.querySelectorAll('.nav-btn').forEach(btn => { btn.style.color = btn.dataset.screen === state.currentScreen ? 'var(--accent)' : 'var(--text-secondary)'; }); }
         
         // --- HOMEWORK & DATA RENDERING ---
-        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-full no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-2xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
+        function setupDateScroller() { const scroller = document.getElementById('date-scroller'), today = new Date(), days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']; scroller.innerHTML = ''; for (let i = -10; i <= 10; i++) { const date = new Date(); date.setDate(today.getDate() + i); const isToday = i === 0; const dateEl = document.createElement('button'); dateEl.className = `date-scroller-btn flex-shrink-0 flex flex-col items-center justify-center w-12 h-16 no-outline ${isToday ? 'active' : ''}`; dateEl.style.color = isToday ? 'var(--accent)' : 'var(--text-secondary)'; dateEl.dataset.date = date.toISOString().split('T')[0]; dateEl.innerHTML = `<span class="text-sm font-semibold">${days[date.getDay()]}</span><span class="text-xl font-bold">${date.getDate()}</span>`; dateEl.addEventListener('click', (e) => { handleDateChange(date); }); scroller.appendChild(dateEl); if (isToday) setTimeout(() => dateEl.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100); } }
         
         function handleDateChange(newDate) {
             vibrate();
@@ -409,58 +422,84 @@
 
         async function renderHomeworkForDate(date, direction = 'left') {
             const list = document.getElementById('homework-list');
-            list.className = 'flex-grow p-4 pt-0 relative'; // Reset classes
+            list.className = 'flex-grow p-4 relative'; // Reset classes
             list.innerHTML = `<div class="absolute inset-0 flex justify-center mt-10"><div class="loader"><div></div><div></div><div></div></div></div>`;
             const dateString = date.toISOString().split('T')[0];
             
             try {
                 const snapshot = await db.ref('schedule/' + dateString).once('value');
                 const scheduleData = snapshot.val();
-                state.scheduleCache[dateString] = scheduleData ? Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value })) : null;
-
-                const schedule = state.scheduleCache[dateString];
-
-                list.className = 'flex-grow p-4 pt-0 relative';
                 
-                if (!schedule) {
+                list.className = 'flex-grow p-4 relative';
+                
+                if (!scheduleData) {
                     list.innerHTML = `<div class="text-center mt-10 opacity-0 scale-in-up" style="animation-delay: 100ms;"><div id="lottie-container" class="mx-auto w-40 h-40"></div><p class="mt-4" style="color: var(--text-secondary);">На этот день ничего нет</p></div>`;
                     if (nodayLottie) nodayLottie.destroy();
                     nodayLottie = lottie.loadAnimation({ container: document.getElementById('lottie-container'), renderer: 'svg', loop: true, autoplay: true, path: 'noday.json' });
                     return;
                 }
                 
+                const schedule = Object.entries(scheduleData).map(([key, value]) => ({ id: key, ...value }));
                 const completedHomeworks = JSON.parse(localStorage.getItem(`completed_${state.user.id}_${dateString}`) || '{}');
                 
                 list.innerHTML = '';
                 schedule.forEach((hw, index) => {
                     const isCompleted = completedHomeworks[hw.id] || false;
+                    const hasDetails = hw.homework_text || (hw.attachments && hw.attachments.length > 0);
                     const item = document.createElement('div');
-                    item.className = 'lesson-item flex items-center gap-4 p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
+                    item.className = 'lesson-item flex flex-col p-4 rounded-2xl mb-3 scale-in-up themed-transition'; 
                     item.style.backgroundColor = 'var(--bg-secondary)';
                     item.style.animationDelay = `${index * 70}ms`;
-                    item.dataset.scheduleId = hw.id;
-                    item.dataset.date = dateString;
+
+                    let attachmentsHTML = '';
+                    if (hw.attachments && hw.attachments.length > 0) {
+                        attachmentsHTML = hw.attachments.map(url => {
+                             const fileName = url.split('/').pop().split('?')[0];
+                             return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">${decodeURIComponent(fileName)}</span></a>`;
+                        }).join('');
+                    }
                     
                     item.innerHTML = `
-                        <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom flex-shrink-0" ${isCompleted ? 'checked' : ''}>
-                        <div class="flex-grow">
-                            <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
-                            <p class="font-bold text-lg">${hw.subject}</p>
+                        <div class="lesson-header flex items-center gap-4 w-full cursor-pointer">
+                            <input type="checkbox" data-schedule-id="${hw.id}" data-date="${dateString}" class="checkbox-custom flex-shrink-0" ${isCompleted ? 'checked' : ''}>
+                            <div class="flex-grow">
+                                <p class="text-sm font-medium" style="color: var(--text-secondary);">${hw.time}</p>
+                                <p class="font-bold text-lg">${hw.subject}</p>
+                            </div>
+                            ${hasDetails ? `
+                                <div class="flex-shrink-0">
+                                    <svg class="expand-icon h-6 w-6" style="color: var(--text-secondary);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                </div>
+                            ` : `<div class="h-6 w-6"></div>`}
                         </div>
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6" style="color: var(--text-secondary);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                        ${hasDetails ? `
+                        <div class="lesson-details grid">
+                            <div>
+                                <div class="border-t pt-3 mt-3 space-y-3" style="border-color: var(--border-color);">
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Домашнее задание:</h4>
+                                        <p class="whitespace-pre-wrap text-white/90">${hw.homework_text || 'Нет.'}</p>
+                                    </div>
+                                    ${attachmentsHTML ? `
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Прикрепленные файлы:</h4>
+                                        ${attachmentsHTML}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
                         </div>
+                        ` : ''}
                     `;
-                    
-                    item.addEventListener('click', (e) => {
-                        if (e.target.type === 'checkbox') return;
-                        vibrate();
-                        const lessonData = state.scheduleCache[dateString]?.find(lesson => lesson.id === hw.id);
-                        if (lessonData) {
-                            openModal(modals.lessonDetails, lessonData);
-                        }
-                    });
 
+                    if (hasDetails) {
+                        item.querySelector('.lesson-header').addEventListener('click', (e) => {
+                            if (e.target.type !== 'checkbox') {
+                                vibrate();
+                                item.classList.toggle('expanded');
+                            }
+                        });
+                    }
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
                     
                     list.appendChild(item);
@@ -498,36 +537,10 @@
         function closeModal() { if (currentOpenModal) { modals.overlay.classList.remove('active'); currentOpenModal.classList.remove('active'); currentOpenModal = null; } TG.BackButton.hide(); }
         
         async function populateModal(modal, data) {
-            switch(modal) {
-                case modals.lessonDetails:
-                    const attachmentsHTML = (data.attachments && data.attachments.length > 0) ? data.attachments.map(url => {
-                        const fileName = url.split('/').pop().split('?')[0];
-                        return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">${decodeURIComponent(fileName)}</span></a>`;
-                    }).join('') : '';
+            modal.innerHTML = `<div class="p-4 pt-0 h-full flex flex-col themed-transition"><div class="flex justify-center py-2"><div class="w-10 h-1.5 rounded-full themed-transition" style="background-color: var(--border-color);"></div></div></div>`;
+            const contentWrapper = modal.firstChild;
 
-                    modal.innerHTML = `
-                    <div class="p-4 pt-0 h-full flex flex-col">
-                        <header class="flex-shrink-0 flex items-center justify-between py-4">
-                             <h2 class="text-2xl font-bold">${data.subject}</h2>
-                             <button class="modal-close-btn p-2 rounded-full themed-transition" style="background-color: var(--bg-secondary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-                        </header>
-                        <main class="flex-grow overflow-y-auto space-y-6 pb-4">
-                            <div>
-                                <h4 class="font-semibold mb-1" style="color:var(--text-secondary);">Время</h4>
-                                <p>${data.time}</p>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold mb-1" style="color:var(--text-secondary);">Домашнее задание</h4>
-                                <p class="whitespace-pre-wrap">${data.homework_text || 'Нет.'}</p>
-                            </div>
-                            ${attachmentsHTML ? `
-                            <div>
-                                <h4 class="font-semibold mb-1" style="color:var(--text-secondary);">Прикрепленные файлы</h4>
-                                ${attachmentsHTML}
-                            </div>` : ''}
-                        </main>
-                    </div>`;
-                    break;
+            switch(modal) {
                 case modals.settings:
                     modals.settings.innerHTML = `<div class="w-full max-w-sm p-6 rounded-2xl scale-in-up themed-transition" style="background-color: var(--bg-secondary); opacity: 0;"><h3 class="text-xl font-bold mb-4">Сменить имя</h3><input id="settings-new-name" type="text" class="w-full p-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);" value="${state.user.fullName}"><div class="flex gap-4 mt-6"><button class="modal-close-btn w-full py-3 rounded-lg themed-transition" style="background-color: var(--bg-tertiary);">Отмена</button><button id="settings-save-name-btn" class="accent-button w-full py-3 rounded-lg">Сохранить</button></div></div>`;
                     document.getElementById('settings-save-name-btn').addEventListener('click', handleNameChange);
@@ -816,12 +829,13 @@
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Supabase function error:", errorData);
-                throw new Error(errorData.details || `Ошибка вызова функции AI: ${errorData.error}`);
+                throw new Error(errorData.details || 'Ошибка при вызове функции AI');
             }
 
             const result = await response.json();
             return result.response;
         }
+
 
         async function handleAiFormSubmit(e) {
             e.preventDefault();
@@ -830,6 +844,7 @@
             if(!prompt) return;
 
             input.value = '';
+            // If chat is empty, clear templates before adding the new message
             if(state.aiChatHistory.length === 0) renderAiChat();
             
             state.aiChatHistory.push({ role: 'user', content: prompt });
@@ -842,19 +857,28 @@
             try {
                 // Step 1: Information Gathering
                 const today = new Date();
-                const jsonExtractionPrompt = `Твоя задача - извлечь из запроса пользователя дату и название урока для поиска домашнего задания. Ответь ТОЛЬКО в формате JSON. Пример: {"date": "YYYY-MM-DD", "lesson": "Название урока"}. Относительно сегодняшней даты (${today.toISOString().split('T')[0]}), определи дату для "вчера", "сегодня", "завтра". Если неясно, верни {"error": "not_found"}. НЕ добавляй объяснений. Запрос: "${prompt}"`;
+                const jsonExtractionPrompt = `Твоя задача - извлечь из запроса пользователя дату и название урока для поиска домашнего задания. Ответь ТОЛЬКО в формате JSON.
+                Пример JSON: {"date": "YYYY-MM-DD", "lesson": "Название урока"}
+                Относительно сегодняшней даты (${today.toISOString().split('T')[0]}), определи дату для слов "вчера", "сегодня", "завтра".
+                Если дата или урок неясны, верни {"error": "not_found"}.
+                НЕ добавляй никаких объяснений, только JSON.
+
+                Запрос пользователя: "${prompt}"`;
+
                 const jsonResponseText = await callSupabaseAI(jsonExtractionPrompt);
 
                 let hwData = null;
                 try {
+                    // Clean response before parsing
                     const cleanedJson = jsonResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                     hwData = JSON.parse(cleanedJson);
                 } catch (jsonError) {
-                    console.log("AI did not return valid JSON for HW check. Treating as a general query.", jsonResponseText);
+                    console.log("AI did not return valid JSON. Treating as a general query.", jsonResponseText);
                     hwData = null;
                 }
 
                 if (hwData && hwData.date && hwData.lesson) {
+                    // Step 2: Found date and lesson, now get HW from Firebase
                     const snapshot = await db.ref('schedule/' + hwData.date).once('value');
                     const scheduleData = snapshot.val();
                     let foundLesson = null;
@@ -868,28 +892,37 @@
                     }
 
                     if (foundLesson) {
-                        let hwInfo = `Текст: ${foundLesson.homework_text || 'Не указан.'}`;
+                        let hwInfo = `Текст задания: ${foundLesson.homework_text || 'Не указан.'}`;
                         if (foundLesson.attachments && foundLesson.attachments.length > 0) {
-                            hwInfo += `\nФайлы: ${foundLesson.attachments.join(', ')}`;
+                            hwInfo += `\nПрикрепленные файлы: ${foundLesson.attachments.join(', ')}`;
                         }
-                        const finalPrompt = `Контекст диалога:\n${state.aiChatHistory.slice(0, -1).map(m => `${m.role === 'user' ? 'Пользователь' : 'AI'}: ${m.content}`).join('\n')}\n---\nЗАДАЧА:\nПользователь спросил: "${prompt}".\nЯ нашел ДЗ:\n- Предмет: ${foundLesson.subject}\n- Дата: ${hwData.date}\n- Задание: ${hwInfo}\nОсновываясь на этой информации и контексте, дай полезный ответ.`;
+                        const finalPrompt = `Пользователь спросил: "${prompt}".
+                        Вот информация о домашнем задании, которую я нашел:
+                        - Предмет: ${foundLesson.subject}
+                        - Дата: ${hwData.date}
+                        - Задание: ${hwInfo}
+                        Основываясь на этой информации, дай развернутый и полезный ответ на вопрос пользователя. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
                         finalResponse = await callSupabaseAI(finalPrompt);
+
                     } else {
-                         finalResponse = `Я не смог найти ДЗ по предмету "${hwData.lesson}" на ${hwData.date}. Проверьте название предмета и дату.`;
+                         finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}. Проверьте, правильно ли указан предмет и дата.`;
                     }
+
                 } else {
-                    const fullConversationPrompt = `Контекст диалога:\n${state.aiChatHistory.map(m => `${m.role === 'user' ? 'Пользователь' : 'AI'}: ${m.content}`).join('\n')}\n---\nЗАДАЧА:\nОтветь как AI-помощник на последнее сообщение. Если просят ДЗ, но не предоставляют его, попроси прислать текст/фото.`;
-                    finalResponse = await callSupabaseAI(fullConversationPrompt);
+                    // Fallback: This is a general question or AI couldn't extract data.
+                    const fallbackPrompt = `Ответь на вопрос пользователя. Если пользователь просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$). Вопрос: "${prompt}"`;
+                    finalResponse = await callSupabaseAI(fallbackPrompt);
                 }
 
             } catch (e) {
                 console.error("AI Error:", e);
-                finalResponse = `Извините, произошла ошибка AI. (${e.message})`;
+                finalResponse = `Извините, произошла ошибка при обращении к AI-помощнику. (${e.message})`;
             }
             
             typingEl.remove();
             state.aiChatHistory.push({ role: 'ai', content: finalResponse });
             addMessageToChat('ai', finalResponse);
+
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
         }
 
