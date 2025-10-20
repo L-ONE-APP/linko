@@ -23,10 +23,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.5); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
+            /* УЛУЧШЕНИЕ: Фон шапки и навигации сделан более прозрачным для усиления эффекта размытия */
+            --bg-primary: #000000; --bg-secondary: #1a1a1a; --bg-tertiary: #2a2a2a; --bg-header: rgba(0, 0, 0, 0.3); --text-primary: #ffffff; --text-secondary: #a0a0a0; --accent: #8B5CF6; --accent-light: #A78BFA; --border-color: #333333; --shadow: 0 0 20px rgba(139, 92, 246, 0.3); --safe-area-top: env(safe-area-inset-top); --safe-area-bottom: env(safe-area-inset-bottom);
         }
         html[data-theme='light'] {
-            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.5); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+             /* УЛУЧШЕНИЕ: Фон шапки и навигации сделан более прозрачным для усиления эффекта размытия */
+            --bg-primary: #f9fafb; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6; --bg-header: rgba(249, 250, 251, 0.3); --text-primary: #000000; --text-secondary: #505050; --accent: #7C3AED; --accent-light: #8B5CF6; --border-color: #e5e7eb; --shadow: 0 0 20px rgba(124, 58, 237, 0.2);
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -57,6 +59,13 @@
         .modal.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         
+        /* УЛУЧШЕНИЕ: Новая анимация отправки сообщения */
+        .user-message-sent { animation: fly-out 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: bottom right; }
+        @keyframes fly-out { 
+            from { opacity: 0; transform: translateY(40px) scale(0.6); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
         .scale-in-up { animation: scaleInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
         @keyframes scaleInUp { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
@@ -96,13 +105,6 @@
         #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
         .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
         @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
-
-        .message-enter-anim { animation: messageEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        @keyframes messageEnter {
-            from { opacity: 0; transform: translateY(10px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
         /* Formatted Content Styles */
         .formatted-content p:not(:last-child) { margin-bottom: 0.75rem; }
         .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
@@ -117,7 +119,7 @@
         /* Lesson Accordion Styles */
         .lesson-details {
             grid-template-rows: 0fr;
-            transition: grid-template-rows 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: grid-template-rows 0.4s ease-out;
         }
         .lesson-details > div {
             overflow: hidden;
@@ -126,13 +128,13 @@
             grid-template-rows: 1fr;
         }
         .expand-icon {
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.3s ease;
         }
         .lesson-item.expanded .expand-icon {
             transform: rotate(90deg);
         }
         .lesson-item .lesson-header {
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.15s ease-out;
         }
         .lesson-item .lesson-header:active {
             transform: scale(0.98);
@@ -203,11 +205,8 @@
         const CLOUDINARY_API_KEY = '238868418732411';
         const CLOUDINARY_UPLOAD_PRESET = 'LonePreset';
         const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
-        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz'];
-        const GEMINI_API_KEY = 'AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0'; // Re-added for direct calls
-        // Supabase URLs are kept in case they are needed for other functionality, but chat/admin calls are now direct.
+        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
         const SUPABASE_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-chat';
-        const SUPABASE_ADMIN_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-admin-process';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y';
 
 
@@ -479,8 +478,10 @@
 
                     let attachmentsHTML = '';
                     if (hw.attachments && hw.attachments.length > 0) {
-                        attachmentsHTML = hw.attachments.map((url, i) => {
-                             return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">Файл ${i + 1}</span></a>`;
+                        // УЛУЧШЕНИЕ: Имена файлов заменены на "Файл 1", "Файл 2" и т.д.
+                        attachmentsHTML = hw.attachments.map((url, idx) => {
+                             const fileName = `Файл ${idx + 1}`;
+                             return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">${fileName}</span></a>`;
                         }).join('');
                     }
                     
@@ -518,10 +519,9 @@
                     `;
                     
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
-                    
                     list.appendChild(item);
                 });
-                list.innerHTML += `<div class="h-20"></div>`; // Spacer for nav island
+                list.innerHTML += `<div class="h-20"></div>`;
             } catch (error) {
                 console.error("Error fetching schedule:", error);
                 list.innerHTML = `<p class="text-red-500 text-center mt-10">Не удалось загрузить расписание.</p>`;
@@ -607,7 +607,7 @@
             
             let stepContent = '';
             switch(step) {
-                case 1: // Date and Photo selection
+                case 1:
                     stepContent = `${header('Шаг 1/4: Дата и Фото')}<main class="flex-grow flex flex-col justify-center items-center text-center space-y-6"><input type="date" id="admin-hw-date-select" class="p-3 rounded-lg text-lg themed-transition" style="background-color: var(--bg-tertiary); color-scheme: dark;"><label for="admin-hw-files" class="w-full max-w-sm p-8 border-2 border-dashed rounded-2xl cursor-pointer" style="border-color: var(--border-color);">Выбрать все фото (ДЗ и расписание)</label><input type="file" id="admin-hw-files" accept="image/*" class="hidden" multiple><div id="admin-hw-files-preview" class="text-sm"></div></main>${footer('admin-hw-s1-next', 'Анализировать')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
@@ -620,13 +620,13 @@
                     fileInput.addEventListener('change', (e) => { state.adminFlowData.hwFiles = e.target.files; document.getElementById('admin-hw-files-preview').textContent = `${e.target.files.length} фото выбрано.`; checkReady(); });
                     nextBtn.addEventListener('click', () => { vibrate(); renderAdminHwStep(2); processAllPhotos(); });
                     break;
-                case 2: // AI Processing
+                case 2:
                     stepContent = `${header('Шаг 2/4: Анализ')}<main id="admin-hw-s2-main" class="flex-grow flex flex-col justify-center items-center text-center"><div class="loader"><div></div><div></div><div></div></div><p class="mt-4">AI анализирует фото...</p></main>${footer('admin-hw-s2-next', 'Далее', 'admin-hw-s2-back', 'Назад')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
                     document.getElementById('admin-hw-s2-back').addEventListener('click', () => renderAdminHwStep(1));
                     break;
-                case 3: // AI Response Debug
+                case 3:
                     stepContent = `${header('Шаг 3/4: Отладка AI')}<main id="admin-hw-s3-main" class="flex-grow overflow-y-auto"><p class="mb-4">Это "сырой" JSON от AI. Проверьте его перед продолжением.</p><textarea id="ai-json-debug" class="w-full h-full p-2 rounded font-mono text-sm themed-transition" style="background-color: var(--bg-tertiary);"></textarea></main>${footer('admin-hw-s3-next', 'Подтвердить', 'admin-hw-s3-back', 'Назад')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
@@ -643,7 +643,7 @@
                         }
                     });
                     break;
-                case 4: // Final Review and Publish
+                case 4:
                     stepContent = `${header('Шаг 4/4: Публикация')}<main id="admin-hw-s4-main" class="flex-grow overflow-y-auto"><p class="mb-4">Проверьте результат и прикрепите файлы к урокам, если нужно.</p></main>${footer('admin-hw-publish', 'Опубликовать', 'admin-hw-s4-back', 'Назад')}`;
                     contentWrapper.innerHTML += stepContent;
                     modal.innerHTML = wrapper.innerHTML;
@@ -687,7 +687,8 @@
         
         async function processAllPhotos() {
             try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+                const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
                 const date = new Date(state.adminFlowData.date);
                 const currentYear = date.getFullYear();
@@ -709,10 +710,7 @@
 
                 state.adminFlowData.rawJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
                 renderAdminHwStep(3);
-            } catch (e) {
-                alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`);
-                renderAdminHwStep(1);
-            }
+            } catch (e) { alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`); renderAdminHwStep(1); }
         }
 
         async function publishAdminHomework() {
@@ -728,7 +726,7 @@
                 const date = state.adminFlowData.date;
                 const lessons = state.adminFlowData.lessons;
                 const scheduleRef = db.ref('schedule/' + date);
-                await scheduleRef.set({}); // Clear the day first using set({})
+                await scheduleRef.set({}); 
                 for (const lesson of lessons) { await scheduleRef.push().set(lesson); }
                 showStatus('Расписание успешно опубликовано!', false);
                 renderHomeworkForDate(new Date(date));
@@ -800,107 +798,115 @@
                 state.aiChatHistory.forEach(msg => addMessageToChat(msg.role, msg.content));
             }
         }
-
-        function typewriterHTML(element, htmlString) {
-            let i = 0;
-            const speed = Math.max(5, Math.min(25, 1000 / htmlString.length)); // Dynamic speed, up to ~1s
-            const chatMain = document.getElementById('ai-chat-main');
-
-            function type() {
-                if (i < htmlString.length) {
-                    let char = htmlString.charAt(i);
-                    // If it's a tag, find its end and append the whole tag
-                    if (char === '<') {
-                        let closingIndex = htmlString.indexOf('>', i);
-                        if (closingIndex !== -1) {
-                            element.innerHTML += htmlString.substring(i, closingIndex + 1);
-                            i = closingIndex;
-                        }
-                    } else { // Otherwise, append character by character
-                        element.innerHTML += char;
-                    }
-                    i++;
-                    // Auto-scroll while typing
-                    chatMain.scrollTop = chatMain.scrollHeight;
-                    setTimeout(type, speed);
-                }
-            }
-            type();
-        }
-
-        function addMessageToChat(role, content, type = 'text') {
+        
+        // УЛУЧШЕНИЕ: Новая функция для эффекта печатания
+        function addMessageWithTypingEffect(role, content) {
             const messagesContainer = document.getElementById('ai-chat-messages');
             const msgEl = document.createElement('div');
-            msgEl.className = `flex mb-4 message-enter-anim ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            msgEl.className = `flex mb-4 justify-start`;
+
+            const bgColor = 'var(--bg-secondary)';
+            const textColor = 'var(--text-primary)';
             
-            let innerHTML;
-            if (type === 'typing') {
+            const bubble = document.createElement('div');
+            bubble.className = "p-3 rounded-lg themed-transition formatted-content max-w-full overflow-x-auto scale-in-up";
+            bubble.style.backgroundColor = bgColor;
+            bubble.style.color = textColor;
+            bubble.style.opacity = '0'; // Для анимации scale-in-up
+            
+            msgEl.appendChild(bubble);
+            messagesContainer.appendChild(msgEl);
+            
+            const chatMain = document.getElementById('ai-chat-main');
+            chatMain.scrollTop = chatMain.scrollHeight;
+
+            let i = 0;
+            const totalDuration = 1000; // 1 секунда
+            const speed = Math.max(10, totalDuration / content.length); // Рассчитываем задержку, но не менее 10мс
+
+            function typeWriter() {
+                if (i < content.length) {
+                    bubble.textContent += content.charAt(i);
+                    i++;
+                    chatMain.scrollTop = chatMain.scrollHeight;
+                    setTimeout(typeWriter, speed);
+                } else {
+                    // Форматируем контент ПОСЛЕ завершения печати
+                    let formattedContent = marked.parse(content, { gfm: true, breaks: true });
+                    formattedContent = formattedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+                        try { return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false }); } catch (e) { return match; }
+                    });
+                    formattedContent = formattedContent.replace(/(^|[^$])\$([^\$\n]+?)\$($|[^$])/g, (match, pre, math, post) => {
+                        try {
+                            const renderedMath = katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                            return pre + renderedMath + post;
+                        } catch (e) { return match; }
+                    });
+                    bubble.innerHTML = formattedContent;
+                    chatMain.scrollTop = chatMain.scrollHeight;
+                }
+            }
+            typeWriter();
+        }
+
+
+        function addMessageToChat(role, content) {
+            const messagesContainer = document.getElementById('ai-chat-messages');
+            const msgEl = document.createElement('div');
+            // УЛУЧШЕНИЕ: Добавлена специальная анимация для сообщения пользователя
+            const animationClass = role === 'user' ? 'user-message-sent' : 'scale-in-up';
+            msgEl.className = `flex mb-4 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            let innerHTML = '';
+            if (content === 'typing') { // Специальный флаг для индикатора печати
                 innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-                msgEl.innerHTML = innerHTML;
-                messagesContainer.appendChild(msgEl);
             } else {
                 let formattedContent = marked.parse(content, { gfm: true, breaks: true });
-                formattedContent = formattedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => { try { return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false }); } catch (e) { return match; } });
-                formattedContent = formattedContent.replace(/(^|[^$])\$([^\$\n]+?)\$($|[^$])/g, (match, pre, math, post) => { try { return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false }) + post; } catch (e) { return match; } });
+                formattedContent = formattedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+                    try { return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false }); } catch (e) { return match; }
+                });
+                 formattedContent = formattedContent.replace(/(^|[^$])\$([^\$\n]+?)\$($|[^$])/g, (match, pre, math, post) => {
+                    try {
+                        const renderedMath = katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                        return pre + renderedMath + post;
+                    } catch (e) { return match; }
+                });
 
                 const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
                 const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
-                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content max-w-full overflow-x-auto" style="background-color: ${bgColor}; color: ${textColor};"></div>`;
-                msgEl.innerHTML = innerHTML;
-                messagesContainer.appendChild(msgEl);
-
-                const bubble = msgEl.querySelector('.formatted-content');
-                if (role === 'ai') {
-                    typewriterHTML(bubble, formattedContent);
-                } else {
-                    bubble.innerHTML = formattedContent;
-                }
+                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content max-w-full overflow-x-auto ${animationClass}" style="background-color: ${bgColor}; color: ${textColor}; opacity:0;">${formattedContent}</div>`;
             }
+            msgEl.innerHTML = innerHTML;
 
+            messagesContainer.appendChild(msgEl);
             const chatMain = document.getElementById('ai-chat-main');
-            setTimeout(() => chatMain.scrollTo({ top: chatMain.scrollHeight, behavior: 'smooth' }), 50);
+            chatMain.scrollTop = chatMain.scrollHeight;
             return msgEl;
         }
 
-        async function fileUrlToPart(url) {
-            try {
-                // NOTE: This relies on the file host (Cloudinary) having a permissive CORS policy.
-                // If this fails, a CORS proxy server would be needed.
-                const response = await fetch(url); 
-                if (!response.ok) {
-                    console.warn(`CORS or network error fetching ${url}. Status: ${response.status}`);
-                    return { text: `\n[Системная ошибка: Не удалось прочитать файл по ссылке. CORS или сетевая проблема.]` };
-                }
-                const blob = await response.blob();
-                // Gemini has a 4MB limit per image part.
-                if (blob.size > 4 * 1024 * 1024) {
-                     return { text: `\n[Системная ошибка: Прикрепленный файл слишком большой для анализа.]` };
-                }
-                const reader = new FileReader();
-                const base64String = await new Promise((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-                return { inlineData: { mimeType: blob.type, data: base64String } };
-            } catch (e) {
-                console.error("Error processing file URL for AI:", e);
-                return { text: `\n[Системная ошибка: Не удалось обработать прикрепленный файл.]` };
-            }
-        }
-        
-        async function callChatAI(parts) {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
-            const payload = { contents: [{ parts: parts }] };
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        async function callSupabaseAI(prompt) {
+            // КОММЕНТАРИЙ: Передача файлов (картинок) AI в этом месте невозможна без изменения серверной части (Supabase Function).
+            // Браузер блокирует прямую загрузку изображений с другого домена (Cloudinary) из-за политики CORS.
+            // Для реализации этой функции сервер должен сам скачивать изображение по ссылке и передавать его AI.
+            const formData = new FormData();
+            formData.append('prompt', prompt);
+
+            const response = await fetch(SUPABASE_FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                body: formData
+            });
+
             if (!response.ok) {
-                const err = await response.json();
-                console.error("Gemini API Error:", err);
-                throw new Error(err.error?.message || 'Unknown API Error');
+                const errorData = await response.json();
+                console.error("Supabase function error:", errorData);
+                throw new Error(errorData.details || 'Ошибка при вызове функции AI');
             }
+
             const result = await response.json();
-            return result.candidates?.[0]?.content?.parts?.[0]?.text;
+            return result.response;
         }
+
 
         async function handleAiFormSubmit(e) {
             e.preventDefault();
@@ -917,27 +923,27 @@
             addMessageToChat('user', prompt);
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
 
-            const typingEl = addMessageToChat('ai', '', 'typing');
+            
+            const typingEl = addMessageToChat('ai', 'typing');
             let finalResponse = '';
 
             try {
                 const today = new Date();
+                // УЛУЧШЕНИЕ: AI теперь использует сегодняшнюю дату по умолчанию, если она не указана.
                 const jsonExtractionPrompt = `Твоя задача - извлечь из запроса пользователя дату и название урока для поиска домашнего задания. Ответь ТОЛЬКО в формате JSON.
                 Пример JSON: {"date": "YYYY-MM-DD", "lesson": "Название урока"}
-                Относительно сегодняшней даты (${today.toISOString().split('T')[0]}), определи дату для слов "вчера", "сегодня", "завтра".
-                Если в запросе пользователя не упоминается дата (вчера, сегодня, завтра, конкретное число), **обязательно** используй сегодняшнюю дату по умолчанию: "${today.toISOString().split('T')[0]}".
+                Сегодняшняя дата: ${today.toISOString().split('T')[0]}. Используй ее, если дата в запросе не указана явно (например, в вопросе "что по геометрии?"). Определи дату для слов "вчера", "сегодня", "завтра".
                 Если урок неясен, верни {"error": "not_found"}.
                 НЕ добавляй никаких объяснений, только JSON.
                 Запрос пользователя: "${prompt}"`;
 
-                const jsonResponseText = await callChatAI([{text: jsonExtractionPrompt}]);
-
+                const jsonResponseText = await callSupabaseAI(jsonExtractionPrompt);
                 let hwData = null;
                 try {
                     const cleanedJson = jsonResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                     hwData = JSON.parse(cleanedJson);
                 } catch (jsonError) {
-                    console.log("AI did not return valid JSON for date extraction. Treating as a general query.", jsonResponseText);
+                    console.log("AI did not return valid JSON. Treating as a general query.", jsonResponseText);
                     hwData = null;
                 }
 
@@ -955,26 +961,26 @@
                     }
 
                     if (foundLesson) {
-                        const finalPromptParts = [
-                            { text: `Пользователь спросил: "${prompt}".\nВот текст домашнего задания: ${foundLesson.homework_text || 'Не указан.'}\n` }
-                        ];
-
+                        let hwInfo = `Текст задания: ${foundLesson.homework_text || 'Не указан.'}`;
                         if (foundLesson.attachments && foundLesson.attachments.length > 0) {
-                            finalPromptParts.push({text: "К заданию также прикреплены следующие файлы для анализа:"});
-                            const attachmentParts = await Promise.all(foundLesson.attachments.map(fileUrlToPart));
-                            finalPromptParts.push(...attachmentParts);
+                            hwInfo += `\nЕсть прикрепленные файлы (${foundLesson.attachments.length} шт.)`;
                         }
-
-                        finalPromptParts.push({text: `\nОсновываясь на этой информации (включая файлы, если они доступны), дай краткий и прямой ответ. Не упоминай дату или предмет, если это не является прямым ответом на вопрос. Просто предоставь информацию. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`});
-                        finalResponse = await callChatAI(finalPromptParts);
+                        // УЛУЧШЕНИЕ: Промпт для AI теперь просит краткий ответ и без лишних фраз.
+                        const finalPrompt = `Пользователь спросил: "${prompt}".
+                        Вот информация о домашнем задании, которую я нашел:
+                        - Предмет: ${foundLesson.subject}
+                        - Дата: ${hwData.date}
+                        - Задание: ${hwInfo}
+                        Основываясь на этой информации, дай краткий и полезный ответ. Не используй вступительные фразы вроде "По информации на...". Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
+                        finalResponse = await callSupabaseAI(finalPrompt);
 
                     } else {
-                         finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}.`;
+                         finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}. Проверьте, правильно ли указан предмет и дата.`;
                     }
 
                 } else {
-                    const fallbackPromptParts = [{text: `Ответь на вопрос пользователя: "${prompt}". Если он просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`}];
-                    finalResponse = await callChatAI(fallbackPromptParts);
+                    const fallbackPrompt = `Ответь на вопрос пользователя. Если пользователь просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$). Вопрос: "${prompt}"`;
+                    finalResponse = await callSupabaseAI(fallbackPrompt);
                 }
 
             } catch (e) {
@@ -984,7 +990,8 @@
             
             typingEl.remove();
             state.aiChatHistory.push({ role: 'ai', content: finalResponse });
-            addMessageToChat('ai', finalResponse);
+            // УЛУЧШЕНИЕ: Вызываем новую функцию с эффектом печатания
+            addMessageWithTypingEffect('ai', finalResponse);
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
         }
 
@@ -993,4 +1000,3 @@
     </script>
 </body>
 </html>
-
