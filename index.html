@@ -198,6 +198,7 @@
         const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
         const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
         const SUPABASE_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-chat';
+        const SUPABASE_ADMIN_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-admin-process';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y';
 
 
@@ -275,7 +276,6 @@
             renderHomeworkForDate(state.currentDate); 
             renderProfile();
             setupAiChat();
-            // ИСПРАВЛЕНИЕ: Вызываем новую функцию для установки обработчика кликов
             setupHomeworkListListener(); 
         }
 
@@ -401,17 +401,12 @@
         
         // --- HOMEWORK & DATA RENDERING ---
         
-        // ИСПРАВЛЕНИЕ: Новый, более надежный способ обработки кликов на уроки.
         function setupHomeworkListListener() {
             const list = document.getElementById('homework-list');
             list.addEventListener('click', (e) => {
-                // Ищем ближайший родительский элемент с классом 'lesson-header'
                 const header = e.target.closest('.lesson-header');
-                
-                // Проверяем, что клик был по заголовку и не по чекбоксу внутри него
                 if (header && !e.target.matches('input[type="checkbox"]')) {
                     const item = header.closest('.lesson-item');
-                    // Убеждаемся, что у урока есть детали для раскрытия
                     if (item && item.querySelector('.lesson-details')) {
                         vibrate();
                         item.classList.toggle('expanded');
@@ -475,9 +470,8 @@
 
                     let attachmentsHTML = '';
                     if (hw.attachments && hw.attachments.length > 0) {
-                        attachmentsHTML = hw.attachments.map(url => {
-                             const fileName = url.split('/').pop().split('?')[0];
-                             return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">${decodeURIComponent(fileName)}</span></a>`;
+                        attachmentsHTML = hw.attachments.map((url, i) => {
+                             return `<a href="${url}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg no-underline themed-transition mt-2 hover:bg-gray-700" style="background-color: var(--bg-tertiary); color: var(--text-primary);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span class="truncate">Файл ${i + 1}</span></a>`;
                         }).join('');
                     }
                     
@@ -514,7 +508,6 @@
                         ` : ''}
                     `;
                     
-                    // ИСПРАВЛЕНИЕ: Удаляем индивидуальный обработчик кликов отсюда
                     item.querySelector('input[type="checkbox"]').addEventListener('change', handleCheckboxChange);
                     
                     list.appendChild(item);
@@ -685,31 +678,33 @@
         
         async function processAllPhotos() {
             try {
-                // This function uses the old callGemini, it's admin-only and requires a different API key model for image processing.
-                const apiKey = "AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0"; // This might need to be a separate key if permissions differ
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-                const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
-                const date = new Date(state.adminFlowData.date);
-                const currentYear = date.getFullYear();
+                const formData = new FormData();
+                formData.append('date', state.adminFlowData.date);
+                Array.from(state.adminFlowData.hwFiles).forEach(file => {
+                    formData.append('files', file);
+                });
 
-                const prompt = `Проанализируй эти фото. На них есть и сетка расписания, и домашние задания. Текущий год: ${currentYear}. Мне нужно расписание и ДЗ ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date}.
-                Твоя задача:
-                1. Извлечь из фото список уроков только для этой даты.
-                2. Для каждого урока найти и добавить соответствующее домашнее задание.
-                3. Указать имя учителя для каждого урока.
-                ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи: 'subject', 'time' (в формате ЧЧ:ММ-ЧЧ:ММ), 'teacher', и, если есть, 'homework_text'.
-                Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15', 'teacher': 'Иванова И.И.', 'homework_text': '№123, №124'}]`;
-                
-                const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                 if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
+                const response = await fetch(SUPABASE_ADMIN_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    console.error("Supabase Admin Error:", err);
+                    throw new Error(err.error?.message || 'Unknown Supabase Function Error');
+                }
+
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) throw new Error("Не удалось получить ответ от AI.");
+                if (!result.scheduleJson) throw new Error("Не удалось получить JSON от серверной функции.");
 
-                state.adminFlowData.rawJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                state.adminFlowData.rawJson = result.scheduleJson;
                 renderAdminHwStep(3);
-            } catch (e) { alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`); renderAdminHwStep(1); }
+            } catch (e) {
+                alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`);
+                renderAdminHwStep(1);
+            }
         }
 
         async function publishAdminHomework() {
@@ -835,15 +830,13 @@
         }
 
         async function callSupabaseAI(prompt) {
-            const formData = new FormData();
-            formData.append('prompt', prompt);
-
             const response = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify({ prompt: prompt })
             });
 
             if (!response.ok) {
@@ -864,7 +857,6 @@
             if(!prompt) return;
 
             input.value = '';
-            // If chat is empty, clear templates before adding the new message
             if(state.aiChatHistory.length === 0) {
                 document.getElementById('ai-chat-messages').innerHTML = '';
             }
@@ -878,12 +870,12 @@
             let finalResponse = '';
 
             try {
-                // Step 1: Information Gathering
                 const today = new Date();
                 const jsonExtractionPrompt = `Твоя задача - извлечь из запроса пользователя дату и название урока для поиска домашнего задания. Ответь ТОЛЬКО в формате JSON.
                 Пример JSON: {"date": "YYYY-MM-DD", "lesson": "Название урока"}
                 Относительно сегодняшней даты (${today.toISOString().split('T')[0]}), определи дату для слов "вчера", "сегодня", "завтра".
-                Если дата или урок неясны, верни {"error": "not_found"}.
+                Если в запросе пользователя не упоминается дата (вчера, сегодня, завтра, конкретное число), **обязательно** используй сегодняшнюю дату по умолчанию: "${today.toISOString().split('T')[0]}".
+                Если урок неясен, верни {"error": "not_found"}.
                 НЕ добавляй никаких объяснений, только JSON.
 
                 Запрос пользователя: "${prompt}"`;
@@ -892,7 +884,6 @@
 
                 let hwData = null;
                 try {
-                    // Clean response before parsing
                     const cleanedJson = jsonResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                     hwData = JSON.parse(cleanedJson);
                 } catch (jsonError) {
@@ -901,7 +892,6 @@
                 }
 
                 if (hwData && hwData.date && hwData.lesson) {
-                    // Step 2: Found date and lesson, now get HW from Firebase
                     const snapshot = await db.ref('schedule/' + hwData.date).once('value');
                     const scheduleData = snapshot.val();
                     let foundLesson = null;
@@ -920,20 +910,16 @@
                             hwInfo += `\nПрикрепленные файлы: ${foundLesson.attachments.join(', ')}`;
                         }
                         const finalPrompt = `Пользователь спросил: "${prompt}".
-                        Вот информация о домашнем задании, которую я нашел:
-                        - Предмет: ${foundLesson.subject}
-                        - Дата: ${hwData.date}
-                        - Задание: ${hwInfo}
-                        Основываясь на этой информации, дай развернутый и полезный ответ на вопрос пользователя. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
+                        Вот информация о домашнем задании: ${hwInfo}
+                        Основываясь на этой информации, дай краткий и прямой ответ. Не упоминай дату или предмет, если это не является прямым ответом на вопрос. Просто предоставь информацию. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
                         finalResponse = await callSupabaseAI(finalPrompt);
 
                     } else {
-                         finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}. Проверьте, правильно ли указан предмет и дата.`;
+                         finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}.`;
                     }
 
                 } else {
-                    // Fallback: This is a general question or AI couldn't extract data.
-                    const fallbackPrompt = `Ответь на вопрос пользователя. Если пользователь просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$). Вопрос: "${prompt}"`;
+                    const fallbackPrompt = `Ответь на вопрос пользователя: "${prompt}". Если он просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
                     finalResponse = await callSupabaseAI(fallbackPrompt);
                 }
 
