@@ -96,6 +96,13 @@
         #ai-chat-main { -ms-overflow-style: none; scrollbar-width: none; }
         .message-fade-out { animation: fadeOut 0.3s ease-out forwards; }
         @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
+
+        .message-enter-anim { animation: messageEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes messageEnter {
+            from { opacity: 0; transform: translateY(10px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         /* Formatted Content Styles */
         .formatted-content p:not(:last-child) { margin-bottom: 0.75rem; }
         .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
@@ -110,7 +117,7 @@
         /* Lesson Accordion Styles */
         .lesson-details {
             grid-template-rows: 0fr;
-            transition: grid-template-rows 0.4s ease-out;
+            transition: grid-template-rows 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .lesson-details > div {
             overflow: hidden;
@@ -119,13 +126,13 @@
             grid-template-rows: 1fr;
         }
         .expand-icon {
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .lesson-item.expanded .expand-icon {
             transform: rotate(90deg);
         }
         .lesson-item .lesson-header {
-            transition: transform 0.15s ease-out;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .lesson-item .lesson-header:active {
             transform: scale(0.98);
@@ -196,7 +203,9 @@
         const CLOUDINARY_API_KEY = '238868418732411';
         const CLOUDINARY_UPLOAD_PRESET = 'LonePreset';
         const CLOUDINARY_CLOUD_NAME = 'dtsqmmqae'; 
-        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz']; 
+        const ADMIN_TELEGRAM_USERNAMES = ['pjpjki', 'Seva_Kuz'];
+        const GEMINI_API_KEY = 'AIzaSyCglJfoIkzBHeJ3uq4b6afqYs3g6niKgd0'; // Re-added for direct calls
+        // Supabase URLs are kept in case they are needed for other functionality, but chat/admin calls are now direct.
         const SUPABASE_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-chat';
         const SUPABASE_ADMIN_FUNCTION_URL = 'https://biooiajgiryjxkeqtakg.supabase.co/functions/v1/gemini-admin-process';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb29pYWpnaXJ5anhrZXF0YWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4Njk2NDMsImV4cCI6MjA3NTQ0NTY0M30._DmT77M0LcRLHQDRdKZmspOsxuXIByGuiBDndfIMK1Y';
@@ -678,28 +687,27 @@
         
         async function processAllPhotos() {
             try {
-                const formData = new FormData();
-                formData.append('date', state.adminFlowData.date);
-                Array.from(state.adminFlowData.hwFiles).forEach(file => {
-                    formData.append('files', file);
-                });
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+                const imageParts = await Promise.all(Array.from(state.adminFlowData.hwFiles).map(fileToPart));
+                const date = new Date(state.adminFlowData.date);
+                const currentYear = date.getFullYear();
 
-                const response = await fetch(SUPABASE_ADMIN_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    console.error("Supabase Admin Error:", err);
-                    throw new Error(err.error?.message || 'Unknown Supabase Function Error');
-                }
-
+                const prompt = `Проанализируй эти фото. На них есть и сетка расписания, и домашние задания. Текущий год: ${currentYear}. Мне нужно расписание и ДЗ ТОЛЬКО для ОДНОГО дня: ${state.adminFlowData.date}.
+                Твоя задача:
+                1. Извлечь из фото список уроков только для этой даты.
+                2. Для каждого урока найти и добавить соответствующее домашнее задание.
+                3. Указать имя учителя для каждого урока.
+                ВАЖНО: НИКАКИХ ПОЯСНЕНИЙ! ВЕРНИ ТОЛЬКО JSON! Ответ должен быть JSON-массивом объектов. Каждый объект ДОЛЖЕН иметь ключи: 'subject', 'time' (в формате ЧЧ:ММ-ЧЧ:ММ), 'teacher', и, если есть, 'homework_text'.
+                Пример: [{'subject': 'Алгебра', 'time': '08:30-09:15', 'teacher': 'Иванова И.И.', 'homework_text': '№123, №124'}]`;
+                
+                const payload = { contents: [{ parts: [{ text: prompt }, ...imageParts] }] };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                 if (!response.ok) { const err = await response.json(); console.error("API Error:", err); throw new Error(err.error?.message || 'Unknown API Error'); }
                 const result = await response.json();
-                if (!result.scheduleJson) throw new Error("Не удалось получить JSON от серверной функции.");
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error("Не удалось получить ответ от AI.");
 
-                state.adminFlowData.rawJson = result.scheduleJson;
+                state.adminFlowData.rawJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
                 renderAdminHwStep(3);
             } catch (e) {
                 alert(`Ошибка AI: ${e.message}. Попробуйте другие фото или проверьте их качество.`);
@@ -793,62 +801,106 @@
             }
         }
 
+        function typewriterHTML(element, htmlString) {
+            let i = 0;
+            const speed = Math.max(5, Math.min(25, 1000 / htmlString.length)); // Dynamic speed, up to ~1s
+            const chatMain = document.getElementById('ai-chat-main');
+
+            function type() {
+                if (i < htmlString.length) {
+                    let char = htmlString.charAt(i);
+                    // If it's a tag, find its end and append the whole tag
+                    if (char === '<') {
+                        let closingIndex = htmlString.indexOf('>', i);
+                        if (closingIndex !== -1) {
+                            element.innerHTML += htmlString.substring(i, closingIndex + 1);
+                            i = closingIndex;
+                        }
+                    } else { // Otherwise, append character by character
+                        element.innerHTML += char;
+                    }
+                    i++;
+                    // Auto-scroll while typing
+                    chatMain.scrollTop = chatMain.scrollHeight;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
         function addMessageToChat(role, content, type = 'text') {
             const messagesContainer = document.getElementById('ai-chat-messages');
             const msgEl = document.createElement('div');
-            msgEl.className = `flex mb-4 scale-in-up ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-            msgEl.style.opacity = '0';
+            msgEl.className = `flex mb-4 message-enter-anim ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             
-            let innerHTML = '';
+            let innerHTML;
             if (type === 'typing') {
                 innerHTML = `<div class="ai-message p-3 rounded-lg themed-transition" style="background-color: var(--bg-secondary);"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+                msgEl.innerHTML = innerHTML;
+                messagesContainer.appendChild(msgEl);
             } else {
                 let formattedContent = marked.parse(content, { gfm: true, breaks: true });
-                // Render math blocks $$...$$
-                formattedContent = formattedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
-                    } catch (e) { return match; }
-                });
-                // Render inline math $...$
-                 formattedContent = formattedContent.replace(/(^|[^$])\$([^\$\n]+?)\$($|[^$])/g, (match, pre, math, post) => {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false }) + post;
-                    } catch (e) { return match; }
-                });
+                formattedContent = formattedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => { try { return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false }); } catch (e) { return match; } });
+                formattedContent = formattedContent.replace(/(^|[^$])\$([^\$\n]+?)\$($|[^$])/g, (match, pre, math, post) => { try { return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false }) + post; } catch (e) { return match; } });
 
                 const bgColor = role === 'user' ? 'var(--accent)' : 'var(--bg-secondary)';
                 const textColor = role === 'user' ? 'white' : 'var(--text-primary)';
-                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content max-w-full overflow-x-auto" style="background-color: ${bgColor}; color: ${textColor};">${formattedContent}</div>`;
-            }
-            msgEl.innerHTML = innerHTML;
+                innerHTML = `<div class="p-3 rounded-lg themed-transition formatted-content max-w-full overflow-x-auto" style="background-color: ${bgColor}; color: ${textColor};"></div>`;
+                msgEl.innerHTML = innerHTML;
+                messagesContainer.appendChild(msgEl);
 
-            messagesContainer.appendChild(msgEl);
+                const bubble = msgEl.querySelector('.formatted-content');
+                if (role === 'ai') {
+                    typewriterHTML(bubble, formattedContent);
+                } else {
+                    bubble.innerHTML = formattedContent;
+                }
+            }
+
             const chatMain = document.getElementById('ai-chat-main');
-            chatMain.scrollTop = chatMain.scrollHeight;
+            setTimeout(() => chatMain.scrollTo({ top: chatMain.scrollHeight, behavior: 'smooth' }), 50);
             return msgEl;
         }
 
-        async function callSupabaseAI(prompt) {
-            const response = await fetch(SUPABASE_FUNCTION_URL, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ prompt: prompt })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Supabase function error:", errorData);
-                throw new Error(errorData.details || 'Ошибка при вызове функции AI');
+        async function fileUrlToPart(url) {
+            try {
+                // NOTE: This relies on the file host (Cloudinary) having a permissive CORS policy.
+                // If this fails, a CORS proxy server would be needed.
+                const response = await fetch(url); 
+                if (!response.ok) {
+                    console.warn(`CORS or network error fetching ${url}. Status: ${response.status}`);
+                    return { text: `\n[Системная ошибка: Не удалось прочитать файл по ссылке. CORS или сетевая проблема.]` };
+                }
+                const blob = await response.blob();
+                // Gemini has a 4MB limit per image part.
+                if (blob.size > 4 * 1024 * 1024) {
+                     return { text: `\n[Системная ошибка: Прикрепленный файл слишком большой для анализа.]` };
+                }
+                const reader = new FileReader();
+                const base64String = await new Promise((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+                return { inlineData: { mimeType: blob.type, data: base64String } };
+            } catch (e) {
+                console.error("Error processing file URL for AI:", e);
+                return { text: `\n[Системная ошибка: Не удалось обработать прикрепленный файл.]` };
             }
-
-            const result = await response.json();
-            return result.response;
         }
-
+        
+        async function callChatAI(parts) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = { contents: [{ parts: parts }] };
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                const err = await response.json();
+                console.error("Gemini API Error:", err);
+                throw new Error(err.error?.message || 'Unknown API Error');
+            }
+            const result = await response.json();
+            return result.candidates?.[0]?.content?.parts?.[0]?.text;
+        }
 
         async function handleAiFormSubmit(e) {
             e.preventDefault();
@@ -865,7 +917,6 @@
             addMessageToChat('user', prompt);
             localStorage.setItem(`ai_chat_${state.user.id}`, JSON.stringify(state.aiChatHistory));
 
-            
             const typingEl = addMessageToChat('ai', '', 'typing');
             let finalResponse = '';
 
@@ -877,17 +928,16 @@
                 Если в запросе пользователя не упоминается дата (вчера, сегодня, завтра, конкретное число), **обязательно** используй сегодняшнюю дату по умолчанию: "${today.toISOString().split('T')[0]}".
                 Если урок неясен, верни {"error": "not_found"}.
                 НЕ добавляй никаких объяснений, только JSON.
-
                 Запрос пользователя: "${prompt}"`;
 
-                const jsonResponseText = await callSupabaseAI(jsonExtractionPrompt);
+                const jsonResponseText = await callChatAI([{text: jsonExtractionPrompt}]);
 
                 let hwData = null;
                 try {
                     const cleanedJson = jsonResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                     hwData = JSON.parse(cleanedJson);
                 } catch (jsonError) {
-                    console.log("AI did not return valid JSON. Treating as a general query.", jsonResponseText);
+                    console.log("AI did not return valid JSON for date extraction. Treating as a general query.", jsonResponseText);
                     hwData = null;
                 }
 
@@ -905,22 +955,26 @@
                     }
 
                     if (foundLesson) {
-                        let hwInfo = `Текст задания: ${foundLesson.homework_text || 'Не указан.'}`;
+                        const finalPromptParts = [
+                            { text: `Пользователь спросил: "${prompt}".\nВот текст домашнего задания: ${foundLesson.homework_text || 'Не указан.'}\n` }
+                        ];
+
                         if (foundLesson.attachments && foundLesson.attachments.length > 0) {
-                            hwInfo += `\nПрикрепленные файлы: ${foundLesson.attachments.join(', ')}`;
+                            finalPromptParts.push({text: "К заданию также прикреплены следующие файлы для анализа:"});
+                            const attachmentParts = await Promise.all(foundLesson.attachments.map(fileUrlToPart));
+                            finalPromptParts.push(...attachmentParts);
                         }
-                        const finalPrompt = `Пользователь спросил: "${prompt}".
-                        Вот информация о домашнем задании: ${hwInfo}
-                        Основываясь на этой информации, дай краткий и прямой ответ. Не упоминай дату или предмет, если это не является прямым ответом на вопрос. Просто предоставь информацию. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
-                        finalResponse = await callSupabaseAI(finalPrompt);
+
+                        finalPromptParts.push({text: `\nОсновываясь на этой информации (включая файлы, если они доступны), дай краткий и прямой ответ. Не упоминай дату или предмет, если это не является прямым ответом на вопрос. Просто предоставь информацию. Если просят решить, реши. Если просят объяснить, объясни. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`});
+                        finalResponse = await callChatAI(finalPromptParts);
 
                     } else {
                          finalResponse = `Я не смог найти домашнее задание по предмету "${hwData.lesson}" на дату ${hwData.date}.`;
                     }
 
                 } else {
-                    const fallbackPrompt = `Ответь на вопрос пользователя: "${prompt}". Если он просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`;
-                    finalResponse = await callSupabaseAI(fallbackPrompt);
+                    const fallbackPromptParts = [{text: `Ответь на вопрос пользователя: "${prompt}". Если он просит помощи с ДЗ, но не предоставляет его, вежливо попроси его предоставить текст задания или фото. Форматируй математические формулы с помощью LaTeX (например, $x^2$ или $$\\frac{a}{b}$$).`}];
+                    finalResponse = await callChatAI(fallbackPromptParts);
                 }
 
             } catch (e) {
